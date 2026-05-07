@@ -19,9 +19,11 @@ dist/
 *.zip
 
 # IDE / local state
+.vscode/
 *.xcuserstate
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
+*.log
 
 # Secrets / signing
 *.keystore

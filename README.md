@@ -132,10 +132,21 @@ Output:
 apps/android-companion/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Project Docs
+## Source Layout
 
-- [Technical specification](./TECHNICAL_SPEC.md)
-- [Korean product scope](./PRODUCT_SCOPE_KO.md)
-- [V1 renewal plan](./V1_RENEWAL_PLAN_KO.md)
-- [Mirror Mode notes](./docs/MIRROR_MODE_KO.md)
-- [HID-first rebuild notes](./docs/HID_FIRST_REBUILD_KO.md)
+```text
+.
+├── Package.swift
+├── Sources/
+│   ├── MtoGMac/                    # macOS app
+│   └── MtoGExternalDisplayWorker/  # external-display streaming helper
+├── apps/
+│   └── android-companion/          # Galaxy Tab APK project
+├── scripts/
+│   ├── package-macos-dmg.sh
+│   └── build-aoa-hid-probe.sh
+└── tools/
+    └── aoa-hid-probe/              # optional Android Open Accessory HID helper
+```
+
+The repository intentionally keeps only the files needed to build and package the macOS app, Android APK, and optional HID helper. Design drafts, generated build products, local IDE settings, APKs, DMGs, and temporary previews are excluded from git.
