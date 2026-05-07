@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MtoG</string>
+    <string name="accessibility_service_description">Enables remote touch, gesture, and back action injection for direct Mac control.</string>
+    <string name="keyboard_service_name">MtoG Keyboard</string>
+    <string name="keyboard_service_subtype">Remote Unicode Keyboard</string>
+</resources>

@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:MtoG}",
+            "name": "Debug MtoGMac",
+            "target": "MtoGMac",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug MtoGMac"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:MtoG}",
+            "name": "Release MtoGMac",
+            "target": "MtoGMac",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release MtoGMac"
+        }
+    ]
+}

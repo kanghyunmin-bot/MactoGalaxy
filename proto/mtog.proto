@@ -1,0 +1,201 @@
+syntax = "proto3";
+
+package mtog.v1;
+
+option java_multiple_files = true;
+option java_package = "com.mtog.protocol.v1";
+
+message Envelope {
+  uint32 protocol_major = 1;
+  uint32 protocol_minor = 2;
+  string session_id = 3;
+  uint64 message_id = 4;
+  MessageType message_type = 5;
+  uint64 sent_monotonic_ms = 6;
+  string origin_device_id = 7;
+  bool requires_ack = 8;
+  uint64 sequence_no = 9;
+  string correlation_id = 10;
+
+  oneof body {
+    SessionHello session_hello = 20;
+    ControlEnterMode control_enter_mode = 21;
+    ControlExitMode control_exit_mode = 22;
+    InputPointerMove input_pointer_move = 23;
+    InputTap input_tap = 24;
+    InputScroll input_scroll = 25;
+    InputKey input_key = 26;
+    ClipboardUpdate clipboard_update = 27;
+    ResourceBegin resource_begin = 28;
+    ResourceChunk resource_chunk = 29;
+    ResourceEnd resource_end = 30;
+    ErrorEvent error_event = 31;
+    Ack ack = 32;
+  }
+}
+
+enum MessageType {
+  MESSAGE_TYPE_UNSPECIFIED = 0;
+  SESSION_HELLO = 1;
+  CONTROL_ENTER_MODE = 2;
+  CONTROL_EXIT_MODE = 3;
+  INPUT_POINTER_MOVE = 4;
+  INPUT_TAP = 5;
+  INPUT_SCROLL = 6;
+  INPUT_KEY = 7;
+  CLIPBOARD_UPDATE = 8;
+  RESOURCE_BEGIN = 9;
+  RESOURCE_CHUNK = 10;
+  RESOURCE_END = 11;
+  ERROR_EVENT = 12;
+  ACK = 13;
+}
+
+message SessionHello {
+  string device_id = 1;
+  string device_label = 2;
+  repeated string capability = 3;
+  bool trusted_reconnect = 4;
+}
+
+message ControlEnterMode {
+  Edge edge = 1;
+  uint32 android_display_width = 2;
+  uint32 android_display_height = 3;
+  CursorMode cursor_mode = 4;
+}
+
+message ControlExitMode {
+  string reason = 1;
+}
+
+message InputPointerMove {
+  double delta_x = 1;
+  double delta_y = 2;
+  PointerSource pointer_source = 3;
+}
+
+message InputTap {
+  TapKind tap_kind = 1;
+  bool button_secondary = 2;
+}
+
+message InputScroll {
+  double axis_x = 1;
+  double axis_y = 2;
+  ScrollPhase phase = 3;
+}
+
+message InputKey {
+  string logical_key = 1;
+  repeated string modifier = 2;
+  string text = 3;
+  KeyAction action = 4;
+}
+
+message ClipboardUpdate {
+  string clip_id = 1;
+  ClipKind clip_kind = 2;
+  repeated string mime_type = 3;
+  bool is_sensitive = 4;
+  bool history_eligible = 5;
+  string text = 6;
+  TextSubtype text_subtype = 7;
+  ResourceDescriptor resource = 8;
+  ClipboardPreview preview = 9;
+}
+
+message ClipboardPreview {
+  string text_snippet = 1;
+  string filename = 2;
+  string mime_type = 3;
+  uint64 size_bytes = 4;
+  uint32 duration_ms = 5;
+}
+
+message ResourceDescriptor {
+  string resource_id = 1;
+  string filename = 2;
+  string mime_type = 3;
+  uint64 size_bytes = 4;
+  string sha256 = 5;
+}
+
+message ResourceBegin {
+  ResourceDescriptor descriptor = 1;
+}
+
+message ResourceChunk {
+  string resource_id = 1;
+  uint64 offset = 2;
+  bytes data = 3;
+}
+
+message ResourceEnd {
+  string resource_id = 1;
+}
+
+message ErrorEvent {
+  string code = 1;
+  string severity = 2;
+  bool user_visible = 3;
+  bool retryable = 4;
+  string message = 5;
+}
+
+message Ack {
+  uint64 acked_message_id = 1;
+}
+
+enum ClipKind {
+  CLIP_KIND_UNSPECIFIED = 0;
+  CLIP_KIND_TEXT = 1;
+  CLIP_KIND_IMAGE = 2;
+  CLIP_KIND_VIDEO = 3;
+  CLIP_KIND_FILE = 4;
+}
+
+enum TextSubtype {
+  TEXT_SUBTYPE_UNSPECIFIED = 0;
+  TEXT_SUBTYPE_PLAIN = 1;
+  TEXT_SUBTYPE_URL = 2;
+}
+
+enum PointerSource {
+  POINTER_SOURCE_UNSPECIFIED = 0;
+  POINTER_SOURCE_MOUSE = 1;
+  POINTER_SOURCE_TRACKPAD = 2;
+}
+
+enum TapKind {
+  TAP_KIND_UNSPECIFIED = 0;
+  TAP_KIND_PRIMARY = 1;
+  TAP_KIND_SECONDARY = 2;
+  TAP_KIND_LONG_PRESS = 3;
+}
+
+enum ScrollPhase {
+  SCROLL_PHASE_UNSPECIFIED = 0;
+  SCROLL_PHASE_BEGAN = 1;
+  SCROLL_PHASE_CHANGED = 2;
+  SCROLL_PHASE_ENDED = 3;
+}
+
+enum KeyAction {
+  KEY_ACTION_UNSPECIFIED = 0;
+  KEY_ACTION_DOWN = 1;
+  KEY_ACTION_UP = 2;
+}
+
+enum CursorMode {
+  CURSOR_MODE_UNSPECIFIED = 0;
+  CURSOR_MODE_OVERLAY_CURSOR = 1;
+}
+
+enum Edge {
+  EDGE_UNSPECIFIED = 0;
+  EDGE_LEFT = 1;
+  EDGE_RIGHT = 2;
+  EDGE_TOP = 3;
+  EDGE_BOTTOM = 4;
+}

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MtoG UI Preview</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">VS Code Preview</p>
+        <h1>MtoG Interface Preview</h1>
+        <p class="subtitle">
+          Mac controller와 Galaxy Tab S11 companion 화면을 VS Code 안에서 확인하기 위한 정적 프리뷰.
+        </p>
+      </div>
+
+      <div class="controls">
+        <label class="control">
+          연결 상태
+          <select id="connectionState">
+            <option value="trusted">Trusted</option>
+            <option value="pairing">Pairing</option>
+            <option value="active">Android Control Mode</option>
+            <option value="disconnected">Disconnected</option>
+          </select>
+        </label>
+
+        <label class="control">
+          전송 모드
+          <select id="transportState">
+            <option value="usb-adb">USB ADB MVP</option>
+            <option value="usb-aoa">USB AOA Candidate</option>
+            <option value="udp">UDP Tunnel Ready</option>
+            <option value="pending">USB Direct Pending</option>
+          </select>
+        </label>
+
+        <label class="control code-control">
+          페어링 코드
+          <input id="pairingCode" type="text" value="1408" maxlength="4" inputmode="numeric" />
+        </label>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="desktop-preview">
+        <div class="window chrome">
+          <div class="chrome-bar">
+            <span></span><span></span><span></span>
+            <p>MtoG for macOS</p>
+          </div>
+
+          <div class="window-content mac-surface">
+            <section class="hero card">
+              <div>
+                <p class="eyebrow">Mac Controller</p>
+                <h2>MtoG</h2>
+                <p class="subtitle">
+                  Galaxy Tab S11 direct-control dashboard with trusted reconnect and clipboard history.
+                </p>
+              </div>
+
+              <div class="hero-status">
+                <div class="status-pill" id="macStatusPill">Trusted</div>
+                <p>USB-C / Thunderbolt 4 cable attached</p>
+              </div>
+            </section>
+
+            <section class="grid two">
+              <article class="card">
+                <div class="card-head">
+                  <p class="eyebrow">Session</p>
+                  <h3>Current Link</h3>
+                </div>
+
+                <dl class="meta-list">
+                  <div><dt>Mac</dt><dd>KHM’s MacBook Pro</dd></div>
+                  <div><dt>Tablet</dt><dd>Galaxy Tab S11</dd></div>
+                  <div><dt>Status</dt><dd id="macStatusText">Ready to auto reconnect</dd></div>
+                  <div><dt>Trust</dt><dd>Trusted device · auto reconnect enabled</dd></div>
+                  <div><dt>Last Seen</dt><dd>Last seen today, 18:42</dd></div>
+                  <div><dt>Exit</dt><dd>Control + Option + Command + Left Arrow</dd></div>
+                </dl>
+              </article>
+
+              <article class="card">
+                <div class="card-head">
+                  <p class="eyebrow">Pairing</p>
+                  <h3>4-Digit Confirm</h3>
+                </div>
+
+                <p class="supporting">
+                  최초 연결은 양쪽 앱에서 같은 4자리 숫자를 입력한다. 실제 신뢰는 장기 키와 세션 키로 유지된다.
+                </p>
+
+                <div class="digit-row" id="macDigits">
+                  <div class="digit">1</div>
+                  <div class="digit">4</div>
+                  <div class="digit">0</div>
+                  <div class="digit">8</div>
+                </div>
+
+                <p class="note">Entered code: <strong id="macCodeText">1408</strong></p>
+              </article>
+            </section>
+
+            <section class="grid two">
+              <article class="card">
+                <div class="card-head">
+                  <p class="eyebrow">Transport</p>
+                  <h3 id="macTransportLabel">USB ADB MVP</h3>
+                </div>
+
+                <p class="supporting" id="macTransportNote">
+                  가장 빠른 구현 경로. Android USB debugging 필요.
+                </p>
+
+                <div class="transport-callout">
+                  <p class="eyebrow">UDP Note</p>
+                  <p>
+                    UDP는 실제 IP 경로가 있을 때만 의미가 있다. Thunderbolt 4 케이블 자체가 Mac-to-Android UDP 소켓 경로를 자동으로 만들지는 않는다.
+                  </p>
+                </div>
+              </article>
+
+              <article class="card">
+                <div class="card-head">
+                  <p class="eyebrow">Clipboard History</p>
+                  <h3>Recent Items</h3>
+                </div>
+
+                <div class="history-list">
+                  <div class="history-item">
+                    <div class="icon">TXT</div>
+                    <div class="copy">
+                      <strong>Client rollout note</strong>
+                      <span>USB direct mode validated on demo cable set.</span>
+                    </div>
+                    <div class="stamp">
+                      <strong>Now</strong>
+                      <span>412 B</span>
+                    </div>
+                  </div>
+
+                  <div class="history-item">
+                    <div class="icon">IMG</div>
+                    <div class="copy">
+                      <strong>s11-layout.png</strong>
+                      <span>Preview available · 2048×1536</span>
+                    </div>
+                    <div class="stamp">
+                      <strong>2m</strong>
+                      <span>1.8 MB</span>
+                    </div>
+                  </div>
+
+                  <div class="history-item">
+                    <div class="icon">VID</div>
+                    <div class="copy">
+                      <strong>gesture-demo.mp4</strong>
+                      <span>Cached for history replay</span>
+                    </div>
+                    <div class="stamp">
+                      <strong>8m</strong>
+                      <span>18.4 MB</span>
+                    </div>
+                  </div>
+
+                  <div class="history-item">
+                    <div class="icon">FILE</div>
+                    <div class="copy">
+                      <strong>handoff-spec.pdf</strong>
+                      <span>application/pdf</span>
+                    </div>
+                    <div class="stamp">
+                      <strong>16m</strong>
+                      <span>2.3 MB</span>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="tablet-preview">
+        <div class="tablet-frame">
+          <div class="tablet-camera"></div>
+          <div class="tablet-screen">
+            <section class="android-hero card">
+              <p class="eyebrow">Android Companion</p>
+              <h2>Galaxy Tab S11</h2>
+              <p class="subtitle">
+                4-digit trust pairing, direct control readiness, compact clipboard history.
+              </p>
+            </section>
+
+            <section class="android-stack">
+              <article class="card">
+                <div class="card-head">
+                  <p class="eyebrow">Pairing</p>
+                  <h3>Trusted Setup</h3>
+                </div>
+
+                <div class="android-code" id="androidDigits">
+                  <div class="digit small">1</div>
+                  <div class="digit small">4</div>
+                  <div class="digit small">0</div>
+                  <div class="digit small">8</div>
+                </div>
+
+                <p class="note">Same code on both devices</p>
+              </article>
+
+              <article class="card">
+                <div class="card-head">
+                  <p class="eyebrow">Transport</p>
+                  <h3 id="androidTransportLabel">USB ADB MVP</h3>
+                </div>
+
+                <p class="supporting" id="androidTransportNote">
+                  Current fastest implementation path. Use AOA only after Tab S11 validation.
+                </p>
+              </article>
+
+              <article class="card">
+                <div class="card-head">
+                  <p class="eyebrow">History</p>
+                  <h3>Recent Clipboard</h3>
+                </div>
+
+                <div class="mini-history">
+                  <div class="mini-item">
+                    <div class="swatch text"></div>
+                    <div>
+                      <strong>Status recap</strong>
+                      <span>USB direct ready</span>
+                    </div>
+                  </div>
+                  <div class="mini-item">
+                    <div class="swatch image"></div>
+                    <div>
+                      <strong>wireframe.png</strong>
+                      <span>2048×1536</span>
+                    </div>
+                  </div>
+                  <div class="mini-item">
+                    <div class="swatch video"></div>
+                    <div>
+                      <strong>gesture-demo.mp4</strong>
+                      <span>Cached preview</span>
+                    </div>
+                  </div>
+                  <div class="mini-item">
+                    <div class="swatch file"></div>
+                    <div>
+                      <strong>handoff.pdf</strong>
+                      <span>application/pdf</span>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer-note">
+      <p>
+        VS Code only flow: run the local preview server, then open <code>http://127.0.0.1:4173</code> in VS Code Simple Browser.
+      </p>
+    </footer>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
