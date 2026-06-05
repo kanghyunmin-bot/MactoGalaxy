@@ -61,13 +61,13 @@ final class AppModel: ObservableObject {
         lastPairedDescription: "아직 저장된 기기가 없습니다",
         lastSeenDescription: "연결 기록 없음"
     )
-    @Published var pairingCode = ["1", "4", "0", "8"]
+    @Published var pairingCode = ["", "", "", ""]
     @Published var clipboardHistory: [ClipboardHistoryItem]
     @Published var isClipboardHistoryVisible = false
     @Published private(set) var edgeInstructionText = ""
     @Published private(set) var lastEdgeEventDescription = "포인터 전환 대기 중"
     @Published private(set) var clipboardSyncStatus = "클립보드 동기화 대기 중"
-    @Published private(set) var pairingStatusText = "양쪽 기기에 같은 4자리 코드를 입력하세요"
+    @Published private(set) var pairingStatusText = "갤럭시 앱에 표시된 4자리 코드를 이 Mac에 입력하세요"
     @Published private(set) var trustedPeerCount = 0
     @Published private(set) var controlStatusText = "원격 조작 대기 중"
     @Published private(set) var macInputProfile = MacInputSystemProfile()
@@ -139,10 +139,6 @@ final class AppModel: ObservableObject {
             systemProfile: systemProfile,
             preferences: storedInputPreferences
         )
-
-        if let restoredCode = deviceIdentityStore.restoreLastPairingCode(), !restoredCode.isEmpty {
-            applyDemoPairingCode(restoredCode)
-        }
 
         edgeMonitor.configuredCorner = cornerSelection
         edgeMonitor.threshold = edgeThreshold
@@ -219,14 +215,13 @@ final class AppModel: ObservableObject {
         pairingCode.joined()
     }
 
-    func applyDemoPairingCode(_ code: String) {
+    func updatePairingCode(_ code: String) {
         let normalized = code.filter(\.isNumber).prefix(4)
         let padded = Array(normalized).map(String.init)
         pairingCode = padded + Array(repeating: "", count: max(0, 4 - padded.count))
-        deviceIdentityStore.persistLastPairingCode(String(normalized))
         pairingStatusText = normalized.count == 4
-            ? "코드를 저장했습니다. 갤럭시와 연결한 뒤 페어링을 저장하세요."
-            : "양쪽 기기에 4자리 코드를 모두 입력하세요"
+            ? "코드 입력 완료. 갤럭시와 연결한 뒤 페어링을 저장하세요."
+            : "갤럭시 앱에 표시된 4자리 코드를 입력하세요"
     }
 
     func refreshMacInputProfile() {
@@ -498,7 +493,7 @@ final class AppModel: ObservableObject {
             trustState.lastSeenDescription = "현재 연결 없음"
             pairingStatusText = trustState.isTrusted
                 ? "저장된 기기가 있습니다. 갤럭시 앱을 열고 USB 또는 Wi-Fi로 연결하세요."
-                : "양쪽 기기에 같은 4자리 코드를 입력하세요"
+                : "갤럭시 앱에 표시된 4자리 코드를 이 Mac에 입력하세요"
         case .preparingBridge, .connecting:
             connectionStatus = .pairing
             trustState.lastSeenDescription = "연결 중"
@@ -515,7 +510,7 @@ final class AppModel: ObservableObject {
                 : "USB 클립보드 동기화 준비됨"
             pairingStatusText = trustState.isTrusted
                 ? "저장된 기기로 다시 연결할 수 있습니다"
-                : "연결됨. 같은 4자리 코드를 입력하고 페어링을 저장하세요."
+                : "연결됨. 갤럭시에 표시된 4자리 코드를 입력하고 페어링을 저장하세요."
         case .failed:
             if connectionStatus == .active {
                 controlInputController.deactivate()
@@ -694,7 +689,7 @@ final class AppModel: ObservableObject {
         } else {
             trustState.isTrusted = false
             trustState.lastPairedDescription = "연결된 기기가 아직 저장되지 않았습니다"
-            pairingStatusText = "4자리 코드로 페어링을 저장하세요"
+            pairingStatusText = "갤럭시에 표시된 4자리 코드로 페어링을 저장하세요"
             refreshTrustSummary()
         }
     }

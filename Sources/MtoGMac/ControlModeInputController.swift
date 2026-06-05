@@ -113,26 +113,27 @@ final class ControlModeInputController: @unchecked Sendable {
     }
 
     func activate(trigger: ControlCorner, initialPointerLocation: CGPoint) {
-        guard requestMacInputAccessIfNeeded() else {
-            statusHandler?("macOS 접근성 권한이 필요합니다. 시스템 설정에서 MtoG를 허용하세요.")
-            return
-        }
-        guard requestMacListenEventAccessIfNeeded() else {
-            statusHandler?("macOS 입력 모니터링 권한이 필요합니다. 시스템 설정 > 개인정보 보호 및 보안 > 입력 모니터링에서 MtoG를 허용한 뒤 앱을 다시 여세요.")
-            return
-        }
-
-        guard usesNativeHidInput() || allowAccessibilityFallbackInput else {
+        let nativeHidInput = usesNativeHidInput()
+        guard nativeHidInput || allowAccessibilityFallbackInput else {
             statusHandler?("Android 제어 모드는 네이티브 HID만 사용합니다. USB에서는 USB HID를 먼저 켜고, 무선 조작은 미러링 창 안에서 사용하세요.")
             return
         }
 
-        if !usesNativeHidInput() {
+        if !nativeHidInput {
+            guard requestMacInputAccessIfNeeded() else {
+                statusHandler?("macOS 접근성 권한이 필요합니다. 시스템 설정에서 MtoG를 허용하세요.")
+                return
+            }
             commandChannel.activate()
             if !stateQueue.sync(execute: { hasSessionDisplayMetrics }),
                let queriedDisplaySize = commandChannel.queryDisplaySize() {
                 displaySize = queriedDisplaySize
             }
+        }
+
+        guard requestMacListenEventAccessIfNeeded() else {
+            statusHandler?("macOS 입력 모니터링 권한이 필요합니다. 시스템 설정 > 개인정보 보호 및 보안 > 입력 모니터링에서 MtoG를 허용한 뒤 앱을 다시 여세요.")
+            return
         }
 
         stateQueue.sync {

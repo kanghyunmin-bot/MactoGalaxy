@@ -215,6 +215,15 @@ private struct ConnectionPanel: View {
                     Text("페어링 코드")
                         .font(.system(size: 13, weight: .black, design: .rounded))
                         .foregroundStyle(AppTheme.ink)
+                    TextField(
+                        "갤럭시에 표시된 4자리 코드",
+                        text: Binding(
+                            get: { model.enteredPairingCode },
+                            set: { model.updatePairingCode($0) }
+                        )
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
                     HStack(spacing: 8) {
                         ForEach(Array(model.pairingCode.enumerated()), id: \.offset) { _, digit in
                             Text(digit.isEmpty ? "-" : digit)

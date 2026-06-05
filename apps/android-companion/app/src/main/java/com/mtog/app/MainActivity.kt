@@ -1,10 +1,7 @@
 package com.mtog.app
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.Bundle
@@ -84,7 +81,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        requestNotificationPermissionIfNeeded()
         setContent {
             MtoGTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
@@ -149,15 +145,6 @@ class MainActivity : ComponentActivity() {
         }, delayMs)
     }
 
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            return
-        }
-        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-            return
-        }
-        requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 46002)
-    }
 }
 
 @Composable
@@ -173,10 +160,6 @@ private fun HomeScreen() {
     LaunchedEffect(Unit) {
         ClipboardHistoryStore.initialize(context)
         PairingStore.initialize(context)
-        ContextCompat.startForegroundService(
-            context,
-            Intent(context, SessionForegroundService::class.java).setAction(SessionForegroundService.actionStart)
-        )
     }
 
     Box(
@@ -211,6 +194,7 @@ private fun HomeScreen() {
                             PairingCard(
                                 state = pairingState,
                                 onPairingCodeChange = { PairingStore.updateEnteredCode(it) },
+                                onGeneratePairingCode = { PairingStore.regeneratePairingCode() },
                                 modifier = Modifier.weight(1f)
                             )
                             TransportCard(
@@ -255,7 +239,8 @@ private fun HomeScreen() {
                     item {
                         PairingCard(
                             state = pairingState,
-                            onPairingCodeChange = { PairingStore.updateEnteredCode(it) }
+                            onPairingCodeChange = { PairingStore.updateEnteredCode(it) },
+                            onGeneratePairingCode = { PairingStore.regeneratePairingCode() }
                         )
                     }
                     item {
@@ -455,6 +440,7 @@ private fun HeaderCard() {
 private fun PairingCard(
     state: PairingUiState,
     onPairingCodeChange: (String) -> Unit,
+    onGeneratePairingCode: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -465,7 +451,7 @@ private fun PairingCard(
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             SectionTitle(title = "페어링", detail = "4자리 코드로 신뢰 저장")
             Text(
-                text = "Mac과 갤럭시에 같은 4자리 코드를 입력하세요. 코드는 확인용이고, 실제 신뢰 키는 앱이 따로 안전하게 저장합니다.",
+                text = "아래 4자리 코드를 Mac 앱의 페어링 코드 칸에 입력하세요. 코드는 확인용이고, 실제 신뢰 키는 앱이 따로 안전하게 저장합니다.",
                 color = Muted
             )
             Text(
@@ -480,6 +466,11 @@ private fun PairingCard(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = onGeneratePairingCode) {
+                    Text("새 코드")
+                }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 repeat(4) { index ->
                     DigitBox(digit = state.enteredCode.getOrNull(index)?.toString().orEmpty())
@@ -556,7 +547,7 @@ private fun TransportCard(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(onClick = onRestartServer) {
-                    Text("알림 표시")
+                    Text("연결 대기 시작")
                 }
                 Button(onClick = onSyncClipboard) {
                     Text("지금 동기화")

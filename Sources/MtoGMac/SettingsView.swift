@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var model: AppModel
-    @State private var demoCode = "1408"
 
     var body: some View {
         ZStack {
@@ -20,15 +19,19 @@ struct SettingsView: View {
 
                 GroupBox {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("테스트 페어링 코드")
+                        Text("페어링 코드")
                             .font(.system(size: 14, weight: .bold, design: .rounded))
-                        TextField("4자리 숫자", text: $demoCode)
+                        Text("갤럭시 앱에 표시된 4자리 코드를 Mac에 입력하세요. 이 코드는 최초 신뢰 저장 확인용이며 장기 키는 키체인에 따로 저장됩니다.")
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundStyle(AppTheme.muted)
+                        TextField(
+                            "4자리 숫자",
+                            text: Binding(
+                                get: { model.enteredPairingCode },
+                                set: { model.updatePairingCode($0) }
+                            )
+                        )
                             .textFieldStyle(.roundedBorder)
-                        Button("대시보드에 적용") {
-                            model.applyDemoPairingCode(demoCode)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(AppTheme.accent)
                     }
                     .padding(8)
                 }

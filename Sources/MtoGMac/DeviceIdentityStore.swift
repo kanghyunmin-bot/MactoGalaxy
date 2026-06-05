@@ -12,7 +12,6 @@ final class DeviceIdentityStore {
         static let keychainService = "com.mtog.identity"
         static let privateKeyAccount = "p256_signing_private_key"
         static let defaultsDeviceIdKey = "com.mtog.device-id"
-        static let defaultsPairingCodeKey = "com.mtog.last-pairing-code"
     }
 
     private let keychainStore = KeychainStore(service: Constants.keychainService)
@@ -29,14 +28,6 @@ final class DeviceIdentityStore {
             deviceName: deviceName,
             publicKeyBase64: privateKey.publicKey.x963Representation.base64EncodedString()
         )
-    }
-
-    func restoreLastPairingCode() -> String? {
-        defaults.string(forKey: Constants.defaultsPairingCodeKey)
-    }
-
-    func persistLastPairingCode(_ code: String) {
-        defaults.set(code, forKey: Constants.defaultsPairingCodeKey)
     }
 
     private func loadOrCreateDeviceId() -> String {

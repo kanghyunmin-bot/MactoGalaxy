@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlin.random.Random
 
 data class TrustedPeerRecord(
     val deviceId: String,
@@ -16,8 +17,8 @@ data class TrustedPeerRecord(
 )
 
 data class PairingUiState(
-    val enteredCode: String = "1408",
-    val statusText: String = "양쪽 기기에 같은 4자리 코드를 입력하세요",
+    val enteredCode: String = "",
+    val statusText: String = "갤럭시에 표시된 4자리 코드를 Mac에 입력하세요",
     val trustedPeerCount: Int = 0,
     val lastTrustedPeerName: String = "저장된 기기 없음"
 ) {
@@ -38,10 +39,16 @@ object PairingStore {
         appContext = context.applicationContext
         val prefs = prefs()
         val peers = loadTrustedPeers()
+        val existingCode = prefs.getString(keyEnteredCode, null)
+            .orEmpty()
+            .filter(Char::isDigit)
+            .take(4)
+            .takeIf { it.length == 4 && it != "1408" }
+        val pairingCode = existingCode ?: generateAndPersistPairingCode()
         _state.value = PairingUiState(
-            enteredCode = prefs.getString(keyEnteredCode, "1408").orEmpty().ifBlank { "1408" },
+            enteredCode = pairingCode,
             statusText = if (peers.isEmpty()) {
-                "양쪽 기기에 같은 4자리 코드를 입력하세요"
+                "이 4자리 코드를 Mac 앱에 입력하세요"
             } else {
                 "저장된 기기와 다시 연결할 수 있습니다"
             },
@@ -57,10 +64,20 @@ object PairingStore {
             it.copy(
                 enteredCode = normalized,
                 statusText = if (normalized.length == 4) {
-                    "코드를 저장했습니다. 연결 후 Mac 앱에서 페어링을 저장하세요."
+                    "이 4자리 코드를 Mac 앱에 입력한 뒤 페어링을 저장하세요."
                 } else {
                     "4자리 코드를 모두 입력하세요"
                 }
+            )
+        }
+    }
+
+    fun regeneratePairingCode() {
+        val code = generateAndPersistPairingCode()
+        _state.update {
+            it.copy(
+                enteredCode = code,
+                statusText = "새 코드가 생성됐습니다. 이 4자리 코드를 Mac 앱에 입력하세요."
             )
         }
     }
@@ -100,9 +117,11 @@ object PairingStore {
         }
 
         saveTrustedPeers(peers)
+        val nextPairingCode = generateAndPersistPairingCode()
         _state.update {
             it.copy(
-                statusText = "$deviceName 신뢰 기기를 저장했습니다",
+                enteredCode = nextPairingCode,
+                statusText = "$deviceName 신뢰 기기를 저장했습니다. 다음 페어링용 새 코드를 준비했습니다.",
                 trustedPeerCount = peers.size,
                 lastTrustedPeerName = deviceName
             )
@@ -129,6 +148,12 @@ object PairingStore {
     private fun prefs() = requireNotNull(appContext) {
         "PairingStore.initialize(context) must be called before use"
     }.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+
+    private fun generateAndPersistPairingCode(): String {
+        val code = Random.nextInt(0, 10_000).toString().padStart(4, '0')
+        prefs().edit().putString(keyEnteredCode, code).apply()
+        return code
+    }
 
     private fun loadTrustedPeers(): List<TrustedPeerRecord> {
         val encoded = prefs().getString(keyTrustedPeers, null) ?: return emptyList()
