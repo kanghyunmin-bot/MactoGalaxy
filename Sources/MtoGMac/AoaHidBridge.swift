@@ -21,13 +21,13 @@ final class AoaHidBridge: @unchecked Sendable {
         queue.async { [weak self] in
             guard let self else { return }
             if self.process?.isRunning == true {
-                self.reportStatus("AOA HID bridge already running")
+                self.reportStatus("USB HID 브리지가 이미 실행 중입니다")
                 self.reportState(true)
                 return
             }
 
             guard let helperURL = self.resolveHelperURL() else {
-                self.reportStatus("AOA HID helper not found. Build with ./scripts/build-aoa-hid-probe.sh")
+                self.reportStatus("USB HID 도우미를 찾을 수 없습니다. ./scripts/build-aoa-hid-probe.sh 로 빌드하세요.")
                 self.reportState(false)
                 return
             }
@@ -57,7 +57,7 @@ final class AoaHidBridge: @unchecked Sendable {
                     bridge.process = nil
                     bridge.outputPipe?.fileHandleForReading.readabilityHandler = nil
                     bridge.errorPipe?.fileHandleForReading.readabilityHandler = nil
-                    bridge.reportStatus("AOA HID bridge stopped")
+                    bridge.reportStatus("USB HID 브리지가 종료되었습니다")
                     bridge.reportState(false)
                 }
             }
@@ -68,10 +68,10 @@ final class AoaHidBridge: @unchecked Sendable {
                 self.inputHandle = inputPipe.fileHandleForWriting
                 self.outputPipe = outputPipe
                 self.errorPipe = errorPipe
-                self.reportStatus("Starting AOA HID bridge")
+                self.reportStatus("USB HID 브리지를 시작하는 중")
                 self.reportState(true)
             } catch {
-                self.reportStatus("AOA HID bridge failed to start: \(error.localizedDescription)")
+                self.reportStatus("USB HID 브리지 시작 실패: \(error.localizedDescription)")
                 self.reportState(false)
             }
         }
@@ -112,7 +112,7 @@ final class AoaHidBridge: @unchecked Sendable {
         do {
             try inputHandle.write(contentsOf: data)
         } catch {
-            reportStatus("AOA HID write failed: \(error.localizedDescription)")
+            reportStatus("USB HID 입력 전송 실패: \(error.localizedDescription)")
         }
     }
 
@@ -123,7 +123,7 @@ final class AoaHidBridge: @unchecked Sendable {
             .map(String.init)
             .filter { !$0.isEmpty }
         guard let lastLine = lines.last else { return }
-        reportStatus(isError ? "AOA HID error: \(lastLine)" : lastLine)
+        reportStatus(isError ? "USB HID 오류: \(lastLine)" : lastLine)
     }
 
     private func reportStatus(_ status: String) {

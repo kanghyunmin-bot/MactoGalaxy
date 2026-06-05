@@ -15,6 +15,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -192,71 +193,199 @@ private fun HomeScreen() {
             )
             .padding(18.dp)
     ) {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            item {
-                HeaderCard()
-            }
-            item {
-                PairingCard(
-                    state = pairingState,
-                    onPairingCodeChange = { PairingStore.updateEnteredCode(it) }
-                )
-            }
-            item {
-                TransportCard(
-                    mode = mode,
-                    sessionState = sessionState,
-                    onRotate = { mode = coordinator.rotateMode() },
-                    onRestartServer = {
-                        ContextCompat.startForegroundService(
-                            context,
-                            Intent(context, SessionForegroundService::class.java)
-                                .setAction(SessionForegroundService.actionStart)
-                        )
-                    },
-                    onSyncClipboard = {
-                        ContextCompat.startForegroundService(
-                            context,
-                            Intent(context, SessionForegroundService::class.java)
-                                .setAction(SessionForegroundService.actionSyncClipboard)
+        BoxWithConstraints {
+            val wide = maxWidth >= 820.dp
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                item {
+                    HeaderCard()
+                }
+                item {
+                    StatusOverviewCard(sessionState = sessionState)
+                }
+                if (wide) {
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            PairingCard(
+                                state = pairingState,
+                                onPairingCodeChange = { PairingStore.updateEnteredCode(it) },
+                                modifier = Modifier.weight(1f)
+                            )
+                            TransportCard(
+                                mode = mode,
+                                sessionState = sessionState,
+                                onRotate = { mode = coordinator.rotateMode() },
+                                onRestartServer = {
+                                    ContextCompat.startForegroundService(
+                                        context,
+                                        Intent(context, SessionForegroundService::class.java)
+                                            .setAction(SessionForegroundService.actionStart)
+                                    )
+                                },
+                                onSyncClipboard = {
+                                    ContextCompat.startForegroundService(
+                                        context,
+                                        Intent(context, SessionForegroundService::class.java)
+                                            .setAction(SessionForegroundService.actionSyncClipboard)
+                                    )
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            NativeInputCard(modifier = Modifier.weight(1f))
+                            ClipboardHistoryCard(
+                                history = history,
+                                showHistory = showClipboardHistory,
+                                onToggle = { showClipboardHistory = !showClipboardHistory },
+                                onRecopy = { ClipboardHistoryStore.recopy(context, it) },
+                                onDownload = { ClipboardHistoryStore.download(context, it) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                } else {
+                    item {
+                        PairingCard(
+                            state = pairingState,
+                            onPairingCodeChange = { PairingStore.updateEnteredCode(it) }
                         )
                     }
-                )
-            }
-            item {
-                NativeInputCard()
-            }
-            item {
-                ClipboardHistoryCard(
-                    history = history,
-                    showHistory = showClipboardHistory,
-                    onToggle = { showClipboardHistory = !showClipboardHistory },
-                    onRecopy = { ClipboardHistoryStore.recopy(context, it) },
-                    onDownload = { ClipboardHistoryStore.download(context, it) }
-                )
+                    item {
+                        TransportCard(
+                            mode = mode,
+                            sessionState = sessionState,
+                            onRotate = { mode = coordinator.rotateMode() },
+                            onRestartServer = {
+                                ContextCompat.startForegroundService(
+                                    context,
+                                    Intent(context, SessionForegroundService::class.java)
+                                        .setAction(SessionForegroundService.actionStart)
+                                )
+                            },
+                            onSyncClipboard = {
+                                ContextCompat.startForegroundService(
+                                    context,
+                                    Intent(context, SessionForegroundService::class.java)
+                                        .setAction(SessionForegroundService.actionSyncClipboard)
+                                )
+                            }
+                        )
+                    }
+                    item {
+                        NativeInputCard()
+                    }
+                    item {
+                        ClipboardHistoryCard(
+                            history = history,
+                            showHistory = showClipboardHistory,
+                            onToggle = { showClipboardHistory = !showClipboardHistory },
+                            onRecopy = { ClipboardHistoryStore.recopy(context, it) },
+                            onDownload = { ClipboardHistoryStore.download(context, it) }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun NativeInputCard() {
+private fun NativeInputCard(modifier: Modifier = Modifier) {
     Card(
+        modifier = modifier,
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = Panel)
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionTitle(title = "Native Input", detail = "Input architecture")
+            SectionTitle(title = "입력 조작", detail = "키보드와 포인터 방식")
             Text(
-                text = "Accessibility gesture injection is disabled for normal control.",
+                text = "일반 조작은 가능한 한 갤럭시 기본 입력 방식을 우선 사용합니다.",
                 color = Success,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                text = "Use USB AOA HID for edge control. Mirror mode is window-local so Mac control returns as soon as the pointer leaves the mirror window.",
+                text = "USB HID 또는 미러링 창 안 조작을 사용하세요. 미러링 창 밖으로 마우스를 빼면 바로 Mac 조작으로 돌아갑니다.",
                 color = Muted
             )
         }
+    }
+}
+
+@Composable
+private fun StatusOverviewCard(sessionState: SessionRuntimeState) {
+    Card(
+        shape = RoundedCornerShape(30.dp),
+        colors = CardDefaults.cardColors(containerColor = PanelStrong)
+    ) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionTitle(title = "연결 준비", detail = "수신 서버와 무선 검색 상태")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatusTile(
+                    label = "수신 서버",
+                    value = sessionState.serviceState,
+                    modifier = Modifier.weight(1f)
+                )
+                StatusTile(
+                    label = "무선 검색",
+                    value = sessionState.discoveryState,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatusTile(
+                    label = "Wi-Fi 주소",
+                    value = sessionState.lanEndpoint,
+                    modifier = Modifier.weight(1f)
+                )
+                StatusTile(
+                    label = "연결된 Mac",
+                    value = sessionState.peerDeviceName,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Text(
+                text = "Mac 앱에서 Wi-Fi 검색을 누른 뒤 이 갤럭시를 선택하세요. 검색이 막히면 여기에 표시된 IP 주소로 직접 연결하세요.",
+                color = Muted,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatusTile(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .background(Color(0xFFF7FAF8), RoundedCornerShape(18.dp))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Text(
+            text = label.uppercase(),
+            color = Warm,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Black
+        )
+        Text(
+            text = value,
+            color = Ink,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
@@ -314,7 +443,7 @@ private fun HeaderCard() {
                 fontWeight = FontWeight.Black
             )
             Text(
-                text = "Manual clipboard handoff, trusted listener, and window-local mirror control for Galaxy Tab.",
+                text = "Mac과 갤럭시 탭을 개인 Wi-Fi 또는 USB로 연결합니다. 클립보드와 미러링을 버튼으로 쉽게 제어하세요.",
                 color = Color.White.copy(alpha = 0.84f),
                 fontWeight = FontWeight.SemiBold
             )
@@ -325,16 +454,18 @@ private fun HeaderCard() {
 @Composable
 private fun PairingCard(
     state: PairingUiState,
-    onPairingCodeChange: (String) -> Unit
+    onPairingCodeChange: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
+        modifier = modifier,
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = Panel)
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            SectionTitle(title = "Pairing", detail = "4-digit trust confirmation")
+            SectionTitle(title = "페어링", detail = "4자리 코드로 신뢰 저장")
             Text(
-                text = "Enter the same 4-digit code on both devices. This is only the human confirmation step; trust keys are stored separately.",
+                text = "Mac과 갤럭시에 같은 4자리 코드를 입력하세요. 코드는 확인용이고, 실제 신뢰 키는 앱이 따로 안전하게 저장합니다.",
                 color = Muted
             )
             Text(
@@ -345,7 +476,7 @@ private fun PairingCard(
             OutlinedTextField(
                 value = state.enteredCode,
                 onValueChange = onPairingCodeChange,
-                label = { Text("4-digit code") },
+                label = { Text("4자리 코드") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -355,7 +486,7 @@ private fun PairingCard(
                 }
             }
             Text(
-                text = "Trusted peers saved: ${state.trustedPeerCount} · Last trusted: ${state.lastTrustedPeerName}",
+                text = "저장된 기기: ${state.trustedPeerCount}개 · 최근 기기: ${state.lastTrustedPeerName}",
                 color = Muted
             )
         }
@@ -385,14 +516,16 @@ private fun TransportCard(
     sessionState: SessionRuntimeState,
     onRotate: () -> Unit,
     onRestartServer: () -> Unit,
-    onSyncClipboard: () -> Unit
+    onSyncClipboard: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
+        modifier = modifier,
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = Panel)
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionTitle(title = "Transport", detail = "USB dev, wireless, manual clipboard")
+            SectionTitle(title = "연결 방식", detail = "USB, 개인 Wi-Fi, 클립보드")
             Text(
                 text = mode.label,
                 color = Ink,
@@ -403,14 +536,15 @@ private fun TransportCard(
                 text = mode.detail,
                 color = Muted
             )
-            InfoLine(label = "Listener", value = sessionState.serviceState, strong = true)
-            InfoLine(label = "Peer", value = sessionState.peerDeviceName)
-            InfoLine(label = "Wireless", value = sessionState.lanEndpoint, strong = true)
-            InfoLine(label = "Traffic", value = "Inbound ${sessionState.lastInboundType} · Outbound ${sessionState.lastOutboundType}")
-            InfoLine(label = "Control", value = sessionState.lastControlEvent)
-            InfoLine(label = "Clipboard", value = sessionState.lastClipboardEvent)
+            InfoLine(label = "수신 서버", value = sessionState.serviceState, strong = true)
+            InfoLine(label = "연결된 Mac", value = sessionState.peerDeviceName)
+            InfoLine(label = "Wi-Fi 주소", value = sessionState.lanEndpoint, strong = true)
+            InfoLine(label = "무선 검색", value = sessionState.discoveryState, strong = true)
+            InfoLine(label = "통신", value = "수신 ${sessionState.lastInboundType} · 송신 ${sessionState.lastOutboundType}")
+            InfoLine(label = "조작", value = sessionState.lastControlEvent)
+            InfoLine(label = "클립보드", value = sessionState.lastClipboardEvent)
             Text(
-                text = "Automatic clipboard watching is disabled. For Galaxy→Mac sync, copy on Galaxy and tap the notification action: Sync Clipboard.",
+                text = "무선 연결은 개인 Wi-Fi, 개인 핫스팟, 신뢰할 수 있는 LAN에서 사용하세요. 갤럭시에서 Mac으로 클립보드를 보내려면 복사 후 알림의 '클립보드 동기화'를 누르세요.",
                 color = Muted
             )
             sessionState.lastError?.let { error ->
@@ -422,13 +556,13 @@ private fun TransportCard(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(onClick = onRestartServer) {
-                    Text("Show Notification")
+                    Text("알림 표시")
                 }
                 Button(onClick = onSyncClipboard) {
-                    Text("Sync Now")
+                    Text("지금 동기화")
                 }
                 Button(onClick = onRotate) {
-                    Text("Cycle Demo Mode")
+                    Text("데모 모드 전환")
                 }
             }
         }
@@ -466,22 +600,24 @@ private fun ClipboardHistoryCard(
     showHistory: Boolean,
     onToggle: () -> Unit,
     onRecopy: (ClipboardHistoryRecord) -> Unit,
-    onDownload: (ClipboardHistoryRecord) -> Unit
+    onDownload: (ClipboardHistoryRecord) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
+        modifier = modifier,
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = Panel)
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                SectionTitle(title = "Clipboard History", detail = "Manual sync items")
+                SectionTitle(title = "클립보드 기록", detail = "동기화한 항목")
                 Spacer(modifier = Modifier.weight(1f))
                 Button(onClick = onToggle) {
-                    Text(if (showHistory) "Hide" else "Show")
+                    Text(if (showHistory) "숨기기" else "보기")
                 }
             }
             Text(
-                text = "Text and file names stay text-only. Images show a small preview. Use Re-copy to put an item back on the Galaxy clipboard, or Download to save it.",
+                text = "텍스트와 파일명은 글자로, 이미지는 작은 미리보기로 표시합니다. 다시 복사는 갤럭시 클립보드에 다시 넣고, 저장은 기기에 파일로 저장합니다.",
                 color = Muted,
                 fontWeight = FontWeight.SemiBold
             )
@@ -494,7 +630,7 @@ private fun ClipboardHistoryCard(
                             .padding(18.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("No clipboard history yet", color = Muted, fontWeight = FontWeight.SemiBold)
+                        Text("아직 클립보드 기록이 없습니다", color = Muted, fontWeight = FontWeight.SemiBold)
                     }
                 } else {
                     history.forEach { item ->
@@ -547,7 +683,7 @@ private fun HistoryRow(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                Text("Re-copy")
+                Text("다시 복사")
             }
             Button(
                 onClick = onDownload,
@@ -555,7 +691,7 @@ private fun HistoryRow(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                Text("Download")
+                Text("저장")
             }
         }
     }

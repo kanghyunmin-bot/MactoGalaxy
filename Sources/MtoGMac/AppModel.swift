@@ -13,6 +13,8 @@ final class AppModel: ObservableObject {
             UserDefaults.standard.set(wirelessHost, forKey: "com.mtog.wireless-host")
         }
     }
+    @Published private(set) var wirelessDiscoveryStatus = "Wi-Fi 검색 대기 중"
+    @Published private(set) var discoveredWirelessPeers: [WirelessDiscoveredPeer] = []
     @Published var preferredExitHotkey = "Esc or Command + Q"
     @Published var useSystemInputSettings = true {
         didSet { persistAndApplyInputRoutingPreferences() }
@@ -53,28 +55,28 @@ final class AppModel: ObservableObject {
             refreshEdgeInstruction()
         }
     }
-    @Published var usbCableLabel = "USB-C / Thunderbolt 4 cable attached"
+    @Published var usbCableLabel = "USB-C / Thunderbolt 4 케이블 연결됨"
     @Published var trustState = TrustState(
         isTrusted: false,
-        lastPairedDescription: "No trusted peer yet",
-        lastSeenDescription: "Never seen"
+        lastPairedDescription: "아직 저장된 기기가 없습니다",
+        lastSeenDescription: "연결 기록 없음"
     )
     @Published var pairingCode = ["1", "4", "0", "8"]
     @Published var clipboardHistory: [ClipboardHistoryItem]
     @Published var isClipboardHistoryVisible = false
     @Published private(set) var edgeInstructionText = ""
-    @Published private(set) var lastEdgeEventDescription = "Waiting for pointer edge"
-    @Published private(set) var clipboardSyncStatus = "Manual clipboard sync idle"
-    @Published private(set) var pairingStatusText = "Enter the same 4-digit code on both devices"
+    @Published private(set) var lastEdgeEventDescription = "포인터 전환 대기 중"
+    @Published private(set) var clipboardSyncStatus = "클립보드 동기화 대기 중"
+    @Published private(set) var pairingStatusText = "양쪽 기기에 같은 4자리 코드를 입력하세요"
     @Published private(set) var trustedPeerCount = 0
-    @Published private(set) var controlStatusText = "Remote control actions are idle"
+    @Published private(set) var controlStatusText = "원격 조작 대기 중"
     @Published private(set) var macInputProfile = MacInputSystemProfile()
     @Published private(set) var controlTuningProfile = ControlInputTuningProfile.standard
-    @Published private(set) var aoaHidStatusText = "AOA HID bridge idle"
+    @Published private(set) var aoaHidStatusText = "USB HID 브리지 대기 중"
     @Published private(set) var isAoaHidRunning = false
-    @Published private(set) var mirrorStatusText = "Mirror Mode idle"
+    @Published private(set) var mirrorStatusText = "미러링 대기 중"
     @Published private(set) var isMirrorRunning = false
-    @Published private(set) var externalDisplayStatusText = "External Display idle"
+    @Published private(set) var externalDisplayStatusText = "외장 디스플레이 대기 중"
     @Published private(set) var isExternalDisplayRunning = false
 
     let transportCoordinator = TransportCoordinator()
@@ -83,6 +85,7 @@ final class AppModel: ObservableObject {
     let scrcpyMirrorBridge: ScrcpyMirrorBridge
     let virtualDisplayBridge: VirtualDisplayBridge
     let externalDisplayInputSynthesizer: ExternalDisplayInputSynthesizer
+    let wirelessDiscoveryBrowser: WirelessDiscoveryBrowser
     let localIdentity: SessionIdentitySnapshot
 
     private let deviceIdentityStore: DeviceIdentityStore
@@ -116,6 +119,7 @@ final class AppModel: ObservableObject {
         self.scrcpyMirrorBridge = ScrcpyMirrorBridge()
         self.virtualDisplayBridge = VirtualDisplayBridge()
         self.externalDisplayInputSynthesizer = ExternalDisplayInputSynthesizer()
+        self.wirelessDiscoveryBrowser = WirelessDiscoveryBrowser()
         self.controlInputController = ControlModeInputController(
             sessionClient: sessionClient,
             hidBridge: aoaHidBridge
@@ -199,7 +203,7 @@ final class AppModel: ObservableObject {
         }
         externalDisplayInputSynthesizer.permissionFailureHandler = { [weak self] in
             Task { @MainActor in
-                self?.externalDisplayStatusText = "Enable Accessibility for MtoG to allow Galaxy touch clicks"
+                self?.externalDisplayStatusText = "갤럭시 터치 클릭을 쓰려면 macOS 손쉬운 사용에서 MtoG를 허용하세요"
             }
         }
         controlInputController.updateTuningProfile(controlTuningProfile)
@@ -208,6 +212,7 @@ final class AppModel: ObservableObject {
         refreshTrustSummary()
         bindSessionState()
         bindClipboardSync()
+        bindWirelessDiscovery()
     }
 
     var enteredPairingCode: String {
@@ -220,8 +225,8 @@ final class AppModel: ObservableObject {
         pairingCode = padded + Array(repeating: "", count: max(0, 4 - padded.count))
         deviceIdentityStore.persistLastPairingCode(String(normalized))
         pairingStatusText = normalized.count == 4
-            ? "Local code saved. Use Pair & Trust after the Android listener is connected."
-            : "Enter all 4 digits on both devices"
+            ? "코드를 저장했습니다. 갤럭시와 연결한 뒤 페어링을 저장하세요."
+            : "양쪽 기기에 4자리 코드를 모두 입력하세요"
     }
 
     func refreshMacInputProfile() {
@@ -234,39 +239,39 @@ final class AppModel: ObservableObject {
     }
 
     func startAoaHidBridge() {
-        aoaHidStatusText = "Starting AOA HID bridge"
+        aoaHidStatusText = "USB HID 브리지를 시작하는 중"
         aoaHidBridge.start()
     }
 
     func stopAoaHidBridge() {
-        aoaHidStatusText = "Stopping AOA HID bridge"
+        aoaHidStatusText = "USB HID 브리지를 종료하는 중"
         aoaHidBridge.stop()
     }
 
     func startMirrorMode() {
-        mirrorStatusText = "Starting USB Mirror"
+        mirrorStatusText = "USB 미러링을 시작하는 중"
         scrcpyMirrorBridge.start()
     }
 
     func stopMirrorMode() {
-        mirrorStatusText = "Stopping Mirror Mode"
+        mirrorStatusText = "미러링을 종료하는 중"
         scrcpyMirrorBridge.stop()
     }
 
     func startExternalDisplayMode() {
         guard allowExperimentalExternalDisplay else {
-            externalDisplayStatusText = "External Display is disabled. Enable it in Details > Experimental first."
+            externalDisplayStatusText = "외장 디스플레이가 꺼져 있습니다. 먼저 실험 기능 허용을 켜세요."
             return
         }
         if isMirrorRunning {
             stopMirrorMode()
         }
-        externalDisplayStatusText = "Starting Galaxy External Display"
+        externalDisplayStatusText = "갤럭시 외장 디스플레이를 시작하는 중"
         virtualDisplayBridge.start()
     }
 
     func stopExternalDisplayMode() {
-        externalDisplayStatusText = "Stopping Galaxy External Display"
+        externalDisplayStatusText = "갤럭시 외장 디스플레이를 종료하는 중"
         virtualDisplayBridge.stop()
     }
 
@@ -276,35 +281,59 @@ final class AppModel: ObservableObject {
     }
 
     func connectADBSession() async {
-        clipboardSyncStatus = "Starting Android companion and ADB bridge"
+        clipboardSyncStatus = "갤럭시 앱과 USB 연결을 준비하는 중"
         await sessionClient.connectOverADB()
     }
 
     func connectWirelessSession() async {
         let host = wirelessHost.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !host.isEmpty else {
-            clipboardSyncStatus = "Enter the Galaxy wireless IP shown in the Android app"
+            clipboardSyncStatus = "갤럭시 IP를 입력하거나 Wi-Fi 검색을 눌러주세요"
             return
         }
         transportStatus = .secureLanCandidate
-        clipboardSyncStatus = "Opening wireless LAN session to \(host):46001"
+        clipboardSyncStatus = "\(host):46001 무선 연결을 여는 중"
         await sessionClient.connectOverLAN(host: host)
     }
 
+    func startWirelessDiscovery() {
+        transportStatus = .secureLanCandidate
+        wirelessDiscoveryBrowser.start()
+        clipboardSyncStatus = "같은 개인 Wi-Fi/LAN에서 갤럭시 앱을 찾는 중"
+    }
+
+    func stopWirelessDiscovery() {
+        wirelessDiscoveryBrowser.stop()
+    }
+
+    func connectDiscoveredWirelessPeer(_ peer: WirelessDiscoveredPeer) async {
+        transportStatus = .secureLanCandidate
+        clipboardSyncStatus = "\(peer.name)에 Wi-Fi로 연결하는 중"
+        await sessionClient.connectOverBonjour(endpoint: peer.endpoint, displayName: peer.name)
+    }
+
+    func connectFirstDiscoveredWirelessPeer() async {
+        guard let peer = discoveredWirelessPeers.first else {
+            clipboardSyncStatus = "찾은 갤럭시 앱이 없습니다. 갤럭시 앱을 열고 두 기기를 같은 개인 Wi-Fi에 연결하세요."
+            return
+        }
+        await connectDiscoveredWirelessPeer(peer)
+    }
+
     func detectWirelessHostOverUSB() {
-        clipboardSyncStatus = "Detecting Galaxy Wi-Fi IP over USB"
+        clipboardSyncStatus = "USB로 갤럭시 Wi-Fi IP를 확인하는 중"
         let bridge = adbBridge
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             do {
                 let address = try bridge.queryWirelessIPv4Address()
                 DispatchQueue.main.async {
                     self?.wirelessHost = address
-                    self?.clipboardSyncStatus = "Detected Galaxy Wi-Fi IP: \(address)"
+                    self?.clipboardSyncStatus = "갤럭시 Wi-Fi IP 확인됨: \(address)"
                 }
             } catch {
                 let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 DispatchQueue.main.async {
-                    self?.clipboardSyncStatus = "Wireless IP detection failed: \(message)"
+                    self?.clipboardSyncStatus = "무선 IP 확인 실패: \(message)"
                 }
             }
         }
@@ -313,23 +342,23 @@ final class AppModel: ObservableObject {
     func exitAndroidControlMode() {
         controlInputController.deactivate()
         connectionStatus = sessionClient.state == .connected || isAoaHidRunning ? .trusted : .disconnected
-        lastEdgeEventDescription = "Returned control to Mac"
-        controlStatusText = "Returned control to Mac"
+        lastEdgeEventDescription = "Mac 조작으로 돌아왔습니다"
+        controlStatusText = "Mac 조작으로 돌아왔습니다"
     }
 
     func startPairing() {
         let code = enteredPairingCode
         guard code.count == 4 else {
-            pairingStatusText = "Pairing requires a full 4-digit code"
+            pairingStatusText = "페어링에는 4자리 코드가 필요합니다"
             return
         }
 
         guard sessionClient.state == .connected else {
-            pairingStatusText = "Connect USB Dev Mode or Wireless LAN first"
+            pairingStatusText = "먼저 USB 또는 Wi-Fi로 갤럭시와 연결하세요"
             return
         }
 
-        pairingStatusText = "Pair request sent. Waiting for Android confirmation."
+        pairingStatusText = "페어링 요청을 보냈습니다. 갤럭시 확인을 기다리는 중입니다."
         Task {
             await sessionClient.sendPairRequest(code: code)
         }
@@ -337,19 +366,19 @@ final class AppModel: ObservableObject {
 
     func pushCurrentClipboardToAndroid() {
         guard sessionClient.state == .connected else {
-            clipboardSyncStatus = "Connect a USB or Wireless session before pushing clipboard"
+            clipboardSyncStatus = "클립보드를 보내려면 먼저 USB 또는 Wi-Fi로 연결하세요"
             return
         }
         guard trustState.isTrusted else {
-            clipboardSyncStatus = "Pair and trust this Mac before clipboard sync"
+            clipboardSyncStatus = "클립보드 동기화 전에 Mac을 페어링 저장하세요"
             return
         }
         guard let payload = clipboardSyncController.currentPayload() else {
-            clipboardSyncStatus = "Mac clipboard is empty or unsupported"
+            clipboardSyncStatus = "Mac 클립보드가 비어 있거나 지원하지 않는 형식입니다"
             return
         }
 
-        clipboardSyncStatus = "Pushing current Mac clipboard to Android"
+        clipboardSyncStatus = "현재 Mac 클립보드를 갤럭시에 보내는 중"
         Task {
             await sessionClient.sendClipboardPreview(payload: payload.wirePayload)
         }
@@ -357,27 +386,27 @@ final class AppModel: ObservableObject {
 
     func requestAndroidClipboardPull() {
         guard sessionClient.state == .connected else {
-            clipboardSyncStatus = "Connect a session before pulling clipboard"
+            clipboardSyncStatus = "갤럭시 클립보드를 가져오려면 먼저 연결하세요"
             return
         }
 
-        if sessionClient.activeTransportDescription.hasPrefix("Wireless LAN") {
-            clipboardSyncStatus = "Wireless pull uses the Galaxy notification action: tap Sync Clipboard after copying"
+        if sessionClient.activeTransportDescription.hasPrefix("Wi-Fi") {
+            clipboardSyncStatus = "무선에서는 갤럭시에서 복사 후 알림의 '클립보드 동기화'를 누르세요"
             return
         }
 
-        clipboardSyncStatus = "Requesting Android clipboard pull without opening the app"
+        clipboardSyncStatus = "갤럭시 앱을 열지 않고 클립보드 가져오기를 요청하는 중"
         let bridge = adbBridge
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             do {
                 _ = try bridge.requestClipboardSyncService()
                 DispatchQueue.main.async {
-                    self?.clipboardSyncStatus = "Android clipboard service sync requested"
+                    self?.clipboardSyncStatus = "갤럭시 클립보드 동기화를 요청했습니다"
                 }
             } catch {
                 let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 DispatchQueue.main.async {
-                    self?.clipboardSyncStatus = "Android clipboard pull failed: \(message)"
+                    self?.clipboardSyncStatus = "갤럭시 클립보드 가져오기 실패: \(message)"
                 }
             }
         }
@@ -389,32 +418,32 @@ final class AppModel: ObservableObject {
 
     func recopyClipboardHistoryItem(_ item: ClipboardHistoryItem) {
         if clipboardSyncController.recopyHistoryItem(item) {
-            clipboardSyncStatus = "Re-copied \(item.kind.rawValue.lowercased()) history item"
+            clipboardSyncStatus = "클립보드 기록을 다시 복사했습니다"
         } else {
-            clipboardSyncStatus = "History item is no longer available to re-copy"
+            clipboardSyncStatus = "이 기록은 더 이상 다시 복사할 수 없습니다"
         }
     }
 
     func downloadClipboardHistoryItem(_ item: ClipboardHistoryItem) {
         if let url = clipboardSyncController.downloadHistoryItem(item) {
-            clipboardSyncStatus = "Downloaded history item to \(url.lastPathComponent)"
+            clipboardSyncStatus = "\(url.lastPathComponent)에 저장했습니다"
         } else {
-            clipboardSyncStatus = "History item is no longer available to download"
+            clipboardSyncStatus = "이 기록은 더 이상 저장할 수 없습니다"
         }
     }
 
     var adbStateText: String {
         switch sessionClient.state {
         case .idle:
-            return "Idle"
+            return "대기 중"
         case .preparingBridge:
-            return "Preparing ADB bridge"
+            return "USB 연결 준비 중"
         case .connecting:
-            return "Connecting over \(sessionClient.activeTransportDescription)"
+            return "\(sessionClient.activeTransportDescription)로 연결 중"
         case .connected:
-            return "Connected"
+            return "연결됨"
         case .failed(let message):
-            return "Failed: \(message)"
+            return "실패: \(message)"
         }
     }
 
@@ -442,6 +471,20 @@ final class AppModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    private func bindWirelessDiscovery() {
+        wirelessDiscoveryBrowser.$statusText
+            .sink { [weak self] status in
+                self?.wirelessDiscoveryStatus = status
+            }
+            .store(in: &cancellables)
+
+        wirelessDiscoveryBrowser.$peers
+            .sink { [weak self] peers in
+                self?.discoveredWirelessPeers = peers
+            }
+            .store(in: &cancellables)
+    }
+
     private func handleSessionState(_ state: SessionClient.State) {
         switch state {
         case .idle:
@@ -452,27 +495,27 @@ final class AppModel: ObservableObject {
             if connectionStatus != .active {
                 connectionStatus = .disconnected
             }
-            trustState.lastSeenDescription = "No active session"
+            trustState.lastSeenDescription = "현재 연결 없음"
             pairingStatusText = trustState.isTrusted
-                ? "Trusted reconnect available. Connect USB when the Galaxy is attached."
-                : "Enter the same 4-digit code on both devices"
+                ? "저장된 기기가 있습니다. 갤럭시 앱을 열고 USB 또는 Wi-Fi로 연결하세요."
+                : "양쪽 기기에 같은 4자리 코드를 입력하세요"
         case .preparingBridge, .connecting:
             connectionStatus = .pairing
-            trustState.lastSeenDescription = "Connecting"
+            trustState.lastSeenDescription = "연결 중"
         case .connected:
             if connectionStatus != .active {
                 connectionStatus = trustState.isTrusted ? .trusted : .pairing
             }
-            transportStatus = sessionClient.activeTransportDescription.hasPrefix("Wireless LAN")
+            transportStatus = sessionClient.activeTransportDescription.hasPrefix("Wi-Fi")
                 ? .secureLanCandidate
                 : .adbMvp
-            trustState.lastSeenDescription = "Live session active now"
-            clipboardSyncStatus = sessionClient.activeTransportDescription.hasPrefix("Wireless LAN")
-                ? "Manual clipboard sync ready over Wireless LAN"
-                : "Manual clipboard sync ready over USB ADB Dev Mode"
+            trustState.lastSeenDescription = "현재 연결됨"
+            clipboardSyncStatus = sessionClient.activeTransportDescription.hasPrefix("Wi-Fi")
+                ? "Wi-Fi 클립보드 동기화 준비됨"
+                : "USB 클립보드 동기화 준비됨"
             pairingStatusText = trustState.isTrusted
-                ? "Trusted reconnect available"
-                : "Connected. Enter the same 4-digit code and press Pair & Trust."
+                ? "저장된 기기로 다시 연결할 수 있습니다"
+                : "연결됨. 같은 4자리 코드를 입력하고 페어링을 저장하세요."
         case .failed:
             if connectionStatus == .active {
                 controlInputController.deactivate()
@@ -481,22 +524,22 @@ final class AppModel: ObservableObject {
             if connectionStatus != .active {
                 connectionStatus = .disconnected
             }
-            trustState.lastSeenDescription = "No active session"
-            pairingStatusText = "Connection failed. Reconnect USB and allow Galaxy USB debugging."
-            clipboardSyncStatus = "Manual clipboard sync paused"
+            trustState.lastSeenDescription = "현재 연결 없음"
+            pairingStatusText = "연결 실패. USB를 다시 연결하거나 같은 개인 Wi-Fi에서 검색하세요."
+            clipboardSyncStatus = "클립보드 동기화 일시 중지"
         }
     }
 
     private func refreshEdgeInstruction() {
-        edgeInstructionText = "Move pointer into the top-right corner within \(Int(edgeThreshold)) pt to enter Android control mode. Return by moving the Android cursor into the bottom-left corner."
+        edgeInstructionText = "포인터를 Mac 화면 오른쪽 위 모서리 \(Int(edgeThreshold))pt 안으로 이동하면 갤럭시 조작 모드로 들어갑니다. 갤럭시 커서를 왼쪽 아래로 보내면 Mac으로 돌아옵니다."
     }
 
     private func handleCornerActivation(corner: ControlCorner, location: CGPoint) {
         guard connectionStatus != .active else { return }
-        lastEdgeEventDescription = "\(corner.displayName) trigger at x:\(Int(location.x)) y:\(Int(location.y))"
+        lastEdgeEventDescription = "\(corner.displayName)에서 전환 감지 · x:\(Int(location.x)) y:\(Int(location.y))"
         guard isAoaHidRunning else {
-            lastEdgeEventDescription += " · starting AOA HID native input"
-            controlStatusText = "Starting native AOA HID for Android external keyboard/mouse input."
+            lastEdgeEventDescription += " · USB HID 입력 시작 중"
+            controlStatusText = "갤럭시가 외부 키보드/마우스로 인식하도록 USB HID를 시작하는 중입니다."
             startAoaHidBridge()
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
                 guard let self, self.isAoaHidRunning, self.connectionStatus != .active else { return }
@@ -511,28 +554,28 @@ final class AppModel: ObservableObject {
     private func enterAndroidControlMode(trigger: ControlCorner, pointerLocation: CGPoint) {
         refreshMacInputProfile()
         connectionStatus = .active
-        lastEdgeEventDescription = "Android control mode entered from \(trigger.displayName.lowercased())"
-        controlStatusText = "Android 입력 캡처 준비 중"
+        lastEdgeEventDescription = "\(trigger.displayName)에서 갤럭시 조작 모드로 들어갔습니다"
+        controlStatusText = "갤럭시 입력 캡처 준비 중"
         controlInputController.activate(trigger: trigger, initialPointerLocation: pointerLocation)
     }
 
     private func handleLocalClipboard(_ payload: ClipboardSyncPayload) {
         appendClipboardHistory(
             payload: payload,
-            detail: clipboardDetail(for: payload, source: "Mac clipboard"),
+            detail: clipboardDetail(for: payload, source: "Mac 클립보드"),
             sizeLabel: humanSize(payload.sizeInBytes)
         )
 
         guard sessionClient.state == .connected else {
-            clipboardSyncStatus = "Mac clipboard event waiting for session"
+            clipboardSyncStatus = "연결 후 Mac 클립보드를 보낼 수 있습니다"
             return
         }
         guard trustState.isTrusted else {
-            clipboardSyncStatus = "Mac clipboard event blocked until peer is trusted"
+            clipboardSyncStatus = "페어링 저장 후 Mac 클립보드를 보낼 수 있습니다"
             return
         }
 
-        clipboardSyncStatus = "Sent \(payload.kind.rawValue.lowercased()) clipboard to Android"
+        clipboardSyncStatus = "Mac 클립보드를 갤럭시에 보냈습니다"
         Task {
             await sessionClient.sendClipboardPreview(payload: payload.wirePayload)
         }
@@ -552,14 +595,14 @@ final class AppModel: ObservableObject {
         }
 
         if ClipboardSyncPayload.isFromLocalSource(message.payload) {
-            clipboardSyncStatus = "Ignored local clipboard echo"
+            clipboardSyncStatus = "방금 보낸 클립보드 반사를 무시했습니다"
             return
         }
 
         guard let payload = ClipboardSyncPayload.fromWirePayload(message.payload) else {
             let kind = message.payload["kind"] ?? "unknown"
             let size = message.payload["sizeBytes"] ?? "unknown"
-            clipboardSyncStatus = "Ignored unsupported Android clipboard payload: \(kind), \(size) B"
+            clipboardSyncStatus = "지원하지 않는 갤럭시 클립보드입니다: \(kind), \(size) B"
             return
         }
 
@@ -569,18 +612,18 @@ final class AppModel: ObservableObject {
             detail: clipboardDetail(for: payload, source: message.deviceName),
             sizeLabel: humanSize(payload.sizeInBytes)
         )
-        clipboardSyncStatus = "Received \(payload.kind.rawValue.lowercased()) clipboard from Android"
+        clipboardSyncStatus = "갤럭시 클립보드를 받았습니다"
     }
 
     private func clipboardDetail(for payload: ClipboardSyncPayload, source: String) -> String {
         switch payload.kind {
         case .text, .url:
-            return "From \(source)"
+            return "\(source)에서 가져옴"
         case .image, .video, .file:
             if let mimeType = payload.mimeType, !mimeType.isEmpty {
-                return "\(mimeType) · From \(source)"
+                return "\(mimeType) · \(source)에서 가져옴"
             }
-            return "From \(source)"
+            return "\(source)에서 가져옴"
         }
     }
 
@@ -592,7 +635,7 @@ final class AppModel: ObservableObject {
         let newItem = clipboardSyncController.historyItem(
             for: payload,
             detail: detail,
-            timestamp: "Now",
+            timestamp: "방금",
             sizeLabel: sizeLabel
         )
         clipboardHistory.removeAll { item in
@@ -629,7 +672,7 @@ final class AppModel: ObservableObject {
         }
 
         guard let publicKeyBase64 = message.payload["publicKey"], !publicKeyBase64.isEmpty else {
-            pairingStatusText = "Connected. Peer identity not advertised yet."
+            pairingStatusText = "연결됐지만 상대 기기 정보를 아직 받지 못했습니다."
             return
         }
 
@@ -641,17 +684,17 @@ final class AppModel: ObservableObject {
             )
             trustState = TrustState(
                 isTrusted: true,
-                lastPairedDescription: "Trusted peer · auto reconnect eligible",
-                lastSeenDescription: "Last seen now"
+                lastPairedDescription: "신뢰된 기기 · 자동 재연결 가능",
+                lastSeenDescription: "방금 연결됨"
             )
             connectionStatus = .trusted
-            pairingStatusText = "Trusted reconnect active for \(message.deviceName)"
+            pairingStatusText = "\(message.deviceName)와 신뢰 연결이 활성화됐습니다"
             refreshTrustSummary()
-            clipboardSyncStatus = "Trusted peer connected. Use Push Clipboard or the Galaxy notification Sync Clipboard action."
+            clipboardSyncStatus = "신뢰된 기기와 연결됨. Mac에서 보내거나 갤럭시 알림에서 클립보드 동기화를 누르세요."
         } else {
             trustState.isTrusted = false
-            trustState.lastPairedDescription = "Connected peer is not trusted yet"
-            pairingStatusText = "Connected peer requires 4-digit pairing"
+            trustState.lastPairedDescription = "연결된 기기가 아직 저장되지 않았습니다"
+            pairingStatusText = "4자리 코드로 페어링을 저장하세요"
             refreshTrustSummary()
         }
     }
@@ -661,7 +704,7 @@ final class AppModel: ObservableObject {
         let publicKeyBase64 = message.payload["publicKey"] ?? ""
 
         guard status == "accepted", !publicKeyBase64.isEmpty else {
-            pairingStatusText = message.payload["reason"] ?? "Pairing rejected by Android"
+            pairingStatusText = message.payload["reason"] ?? "갤럭시에서 페어링을 거절했습니다"
             trustState.isTrusted = false
             return
         }
@@ -673,11 +716,11 @@ final class AppModel: ObservableObject {
         )
         trustState = TrustState(
             isTrusted: true,
-            lastPairedDescription: "Trusted device stored locally",
-            lastSeenDescription: "Last seen now"
+            lastPairedDescription: "신뢰된 기기를 이 Mac에 저장했습니다",
+            lastSeenDescription: "방금 연결됨"
         )
         connectionStatus = .trusted
-        pairingStatusText = "Pairing complete. Trusted reconnect stored for \(message.deviceName)."
+        pairingStatusText = "페어링 완료. \(message.deviceName)을 신뢰된 기기로 저장했습니다."
         refreshTrustSummary()
     }
 
@@ -721,41 +764,41 @@ final class AppModel: ObservableObject {
 }
 
 enum ConnectionStatus: String {
-    case disconnected = "Disconnected"
-    case pairing = "Pairing"
-    case trusted = "Trusted"
-    case active = "Android Control Mode"
+    case disconnected = "연결 안 됨"
+    case pairing = "페어링 필요"
+    case trusted = "신뢰됨"
+    case active = "갤럭시 조작 중"
 
     var subtitle: String {
         switch self {
         case .disconnected:
-            return "Waiting for tablet session"
+            return "갤럭시 연결 대기 중"
         case .pairing:
-            return "4-digit confirmation pending"
+            return "4자리 코드 확인 필요"
         case .trusted:
-            return "Ready to auto reconnect"
+            return "자동 재연결 준비됨"
         case .active:
-            return "Keyboard and pointer routed to Android"
+            return "키보드와 포인터가 갤럭시로 전달됩니다"
         }
     }
 }
 
 enum TransportStatus: String, CaseIterable {
-    case usbWaiting = "USB Direct Pending"
-    case adbMvp = "USB ADB Dev Mode"
-    case aoaCandidate = "USB AOA Candidate"
-    case secureLanCandidate = "Secure LAN Candidate"
+    case usbWaiting = "USB 연결 대기"
+    case adbMvp = "USB 개발 모드"
+    case aoaCandidate = "USB HID 후보"
+    case secureLanCandidate = "보안 Wi-Fi 후보"
 
     var note: String {
         switch self {
         case .usbWaiting:
-            return "USB-C is the physical link. The app still needs ADB Dev Mode or a validated direct USB transport."
+            return "USB-C 케이블은 물리 연결입니다. 현재 앱 연결에는 USB 개발 모드 또는 검증된 직접 USB 전송이 필요합니다."
         case .adbMvp:
-            return "Current implementation path. Requires Android USB debugging and is not the final production transport."
+            return "현재 구현된 USB 경로입니다. Android USB 디버깅이 필요하며 최종 제품용 전송 방식은 아닙니다."
         case .aoaCandidate:
-            return "Production USB target. Must be validated on real Galaxy Tab S11 hardware."
+            return "제품용 USB 목표 방식입니다. 실제 Galaxy Tab S11에서 검증이 필요합니다."
         case .secureLanCandidate:
-            return "Private-network fallback target. Must use paired-device authentication and encrypted app sessions; public/shared Wi-Fi is not assumed safe."
+            return "개인 네트워크용 무선 연결입니다. 페어링된 기기 인증과 암호화 세션이 필요하며 공용 Wi-Fi는 안전하다고 보지 않습니다."
         }
     }
 

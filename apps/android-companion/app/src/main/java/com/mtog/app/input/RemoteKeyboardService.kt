@@ -28,6 +28,7 @@ class RemoteKeyboardService : InputMethodService() {
     }
 
     override fun onEvaluateInputViewShown(): Boolean {
+        super.onEvaluateInputViewShown()
         return false
     }
 

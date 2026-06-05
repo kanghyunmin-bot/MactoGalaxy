@@ -29,8 +29,8 @@ data class ClipboardTransferPayload(
 
     val previewTitle: String
         get() = when (kind.lowercase()) {
-            "text", "url" -> text.orEmpty().trim().take(48).ifEmpty { "Clipboard item" }
-            else -> name?.takeIf { it.isNotBlank() } ?: "Clipboard item"
+            "text", "url" -> text.orEmpty().trim().take(48).ifEmpty { "클립보드 항목" }
+            else -> name?.takeIf { it.isNotBlank() } ?: "클립보드 항목"
         }
 
     val signature: String
@@ -111,9 +111,9 @@ class ClipboardSyncManager(
 
         this.localPayloadHandler = localPayloadHandler
         cleanupSharedDirectory()
-        lastObservedSignature = readPrimaryClipPayload()?.signature
+        lastObservedSignature = safeReadPrimaryClipPayload()?.signature
         started = true
-        SessionRuntime.markClipboardEvent("Manual clipboard sync ready")
+        SessionRuntime.markClipboardEvent("수동 클립보드 동기화 준비 완료")
     }
 
     fun stop() {
@@ -128,15 +128,15 @@ class ClipboardSyncManager(
         localPayloadHandler = null
         suppressedLocalChangeCount = 0
         started = false
-        SessionRuntime.markClipboardEvent("Manual clipboard sync stopped")
+        SessionRuntime.markClipboardEvent("수동 클립보드 동기화가 중지되었습니다")
     }
 
     fun currentPayload(): ClipboardTransferPayload? {
-        return readPrimaryClipPayload()
+        return safeReadPrimaryClipPayload()
     }
 
     fun recordManualLocalPayload(payload: ClipboardTransferPayload) {
-        recordLocalPayload(payload, detailSuffix = "Manual sync from Android clipboard")
+        recordLocalPayload(payload, detailSuffix = "갤럭시 클립보드에서 수동 동기화")
     }
 
     fun applyRemotePayload(
@@ -145,13 +145,13 @@ class ClipboardSyncManager(
         recordHistory: Boolean = true
     ) {
         if (payload["sourceId"] == localSourceId) {
-            SessionRuntime.markClipboardEvent("Ignored local clipboard echo")
+            SessionRuntime.markClipboardEvent("내가 보낸 클립보드 응답은 무시했습니다")
             return
         }
         if (payload["protocolVersion"]?.takeIf { it.isNotBlank() } != null &&
             payload["protocolVersion"] != ClipboardTransferPayload.protocolVersion
         ) {
-            SessionRuntime.markClipboardEvent("Rejected unsupported clipboard protocol")
+            SessionRuntime.markClipboardEvent("지원하지 않는 클립보드 프로토콜입니다")
             return
         }
 
@@ -161,11 +161,11 @@ class ClipboardSyncManager(
                 val text = payload["text"].orEmpty()
                 val textSize = text.toByteArray(Charsets.UTF_8).size
                 if (text.isEmpty() || textSize > maxTextBytes) {
-                    SessionRuntime.markClipboardEvent("Rejected remote text clipboard: empty or too large")
+                    SessionRuntime.markClipboardEvent("Mac 텍스트 클립보드를 거절했습니다: 비어 있거나 너무 큽니다")
                     return
                 }
                 if (!matchesHash(payload["sha256"], text.toByteArray(Charsets.UTF_8))) {
-                    SessionRuntime.markClipboardEvent("Rejected remote text clipboard: hash mismatch")
+                    SessionRuntime.markClipboardEvent("Mac 텍스트 클립보드를 거절했습니다: 무결성 확인 실패")
                     return
                 }
                 suppressLocalChanges()
@@ -187,32 +187,32 @@ class ClipboardSyncManager(
                             sizeBytes = textSize,
                             sourceId = localSourceId
                         ),
-                        detail = "From $sourceName"
+                        detail = "$sourceName 에서 받음"
                     )
                 }
-                SessionRuntime.markClipboardEvent("Applied remote $kind clipboard from $sourceName")
+                SessionRuntime.markClipboardEvent("$sourceName 의 $kind 클립보드를 적용했습니다")
             }
 
             "image", "video", "file" -> {
                 val encoded = payload["dataBase64"] ?: run {
-                    SessionRuntime.markClipboardEvent("Rejected remote $kind clipboard: missing data")
+                    SessionRuntime.markClipboardEvent("Mac $kind 클립보드를 거절했습니다: 데이터가 없습니다")
                     return
                 }
                 if (encoded.length > maxBase64Characters(maxTransferBytes)) {
-                    SessionRuntime.markClipboardEvent("Rejected remote $kind clipboard: payload too large")
+                    SessionRuntime.markClipboardEvent("Mac $kind 클립보드를 거절했습니다: 데이터가 너무 큽니다")
                     return
                 }
                 val bytes = runCatching { android.util.Base64.decode(encoded, android.util.Base64.DEFAULT) }
                     .getOrNull() ?: run {
-                    SessionRuntime.markClipboardEvent("Rejected remote $kind clipboard: invalid base64")
+                    SessionRuntime.markClipboardEvent("Mac $kind 클립보드를 거절했습니다: 데이터 형식이 올바르지 않습니다")
                     return
                 }
                 if (bytes.isEmpty() || bytes.size > maxTransferBytes) {
-                    SessionRuntime.markClipboardEvent("Rejected remote $kind clipboard: empty or too large")
+                    SessionRuntime.markClipboardEvent("Mac $kind 클립보드를 거절했습니다: 비어 있거나 너무 큽니다")
                     return
                 }
                 if (!matchesHash(payload["sha256"], bytes)) {
-                    SessionRuntime.markClipboardEvent("Rejected remote $kind clipboard: hash mismatch")
+                    SessionRuntime.markClipboardEvent("Mac $kind 클립보드를 거절했습니다: 무결성 확인 실패")
                     return
                 }
                 val mimeType = payload["mimeType"].orEmpty().ifEmpty { "application/octet-stream" }
@@ -246,15 +246,15 @@ class ClipboardSyncManager(
                     ClipboardHistoryStore.recordPayload(
                         context = appContext,
                         payload = transferPayload,
-                        detail = "$mimeType · From $sourceName"
+                        detail = "$mimeType · $sourceName 에서 받음"
                     )
                 }
                 cleanupSharedDirectory()
-                SessionRuntime.markClipboardEvent("Applied remote $kind clipboard from $sourceName")
+                SessionRuntime.markClipboardEvent("$sourceName 의 $kind 클립보드를 적용했습니다")
             }
 
             else -> {
-                SessionRuntime.markClipboardEvent("Rejected unsupported remote clipboard kind: ${kind.ifBlank { "unknown" }}")
+                SessionRuntime.markClipboardEvent("지원하지 않는 클립보드 형식입니다: ${kind.ifBlank { "알 수 없음" }}")
             }
         }
     }
@@ -285,13 +285,13 @@ class ClipboardSyncManager(
     private fun handlePrimaryClipChanged() {
         if (suppressedLocalChangeCount > 0) {
             suppressedLocalChangeCount -= 1
-            lastObservedSignature = readPrimaryClipPayload()?.signature
-            SessionRuntime.markClipboardEvent("Ignored app-applied clipboard echo")
+            lastObservedSignature = safeReadPrimaryClipPayload()?.signature
+            SessionRuntime.markClipboardEvent("앱이 적용한 클립보드 반영은 무시했습니다")
             return
         }
 
-        val payload = readPrimaryClipPayload() ?: run {
-            SessionRuntime.markClipboardEvent("Android clipboard empty, unsupported, or blocked by OS policy")
+        val payload = safeReadPrimaryClipPayload() ?: run {
+            SessionRuntime.markClipboardEvent("갤럭시 클립보드가 비어 있거나, 지원하지 않거나, Android 정책으로 차단되었습니다")
             return
         }
         if (payload.signature == lastObservedSignature) {
@@ -299,9 +299,9 @@ class ClipboardSyncManager(
         }
         lastObservedSignature = payload.signature
 
-        recordLocalPayload(payload, detailSuffix = "From Android clipboard")
+        recordLocalPayload(payload, detailSuffix = "갤럭시 클립보드에서 받음")
         localPayloadHandler?.invoke(payload)
-        SessionRuntime.markClipboardEvent("Detected Android ${payload.kind} clipboard change")
+        SessionRuntime.markClipboardEvent("갤럭시 ${payload.kind} 클립보드 변경을 감지했습니다")
     }
 
     private fun recordLocalPayload(payload: ClipboardTransferPayload, detailSuffix: String) {
@@ -313,6 +313,16 @@ class ClipboardSyncManager(
                 else -> detailSuffix
             }
         )
+    }
+
+    private fun safeReadPrimaryClipPayload(): ClipboardTransferPayload? {
+        return runCatching {
+            readPrimaryClipPayload()
+        }.onFailure { error ->
+            SessionRuntime.markClipboardEvent(
+                "갤럭시 클립보드를 읽지 못했습니다: ${error.localizedMessage ?: error.javaClass.simpleName}"
+            )
+        }.getOrNull()
     }
 
     private fun readPrimaryClipPayload(): ClipboardTransferPayload? {
@@ -347,16 +357,24 @@ class ClipboardSyncManager(
     private fun buildBinaryPayload(uri: Uri): ClipboardTransferPayload? {
         val knownSize = querySizeBytes(uri)
         if (knownSize != null && knownSize > maxTransferBytes) {
-            SessionRuntime.markClipboardEvent("Android clipboard item is over 24 MB")
+            SessionRuntime.markClipboardEvent("갤럭시 클립보드 항목이 24MB를 초과합니다")
             return null
         }
-        val mimeType = contentResolver.getType(uri).orEmpty().ifEmpty {
+        val mimeType = runCatching {
+            contentResolver.getType(uri)
+        }.getOrNull().orEmpty().ifEmpty {
             inferMimeTypeFromUri(uri)
         }
-        val input = contentResolver.openInputStream(uri) ?: return null
+        val input = runCatching {
+            contentResolver.openInputStream(uri)
+        }.onFailure { error ->
+            SessionRuntime.markClipboardEvent(
+                "갤럭시 클립보드 파일 권한이 없어 읽지 못했습니다: ${error.localizedMessage ?: error.javaClass.simpleName}"
+            )
+        }.getOrNull() ?: return null
         val bytes = input.use { stream -> readBytesLimited(stream, maxTransferBytes) } ?: return null
         if (bytes.isEmpty() || bytes.size > maxTransferBytes) {
-            SessionRuntime.markClipboardEvent("Android clipboard binary item is empty or too large")
+            SessionRuntime.markClipboardEvent("갤럭시 클립보드 파일이 비어 있거나 너무 큽니다")
             return null
         }
 

@@ -14,12 +14,14 @@ final class SessionClient: ObservableObject {
     @Published private(set) var state: State = .idle
     @Published private(set) var lastReceivedMessage: SessionEnvelope?
     @Published private(set) var lastErrorMessage: String?
-    @Published private(set) var healthText = "Heartbeat idle"
-    @Published private(set) var activeTransportDescription = "No active transport"
+    @Published private(set) var healthText = "연결 상태 확인 대기 중"
+    @Published private(set) var activeTransportDescription = "활성 연결 없음"
 
     private let bridge: ADBBridge
     private let identity: SessionIdentitySnapshot
     private var connection: NWConnection?
+    private var activeBonjourEndpoint: NWEndpoint?
+    private var activeBonjourName = ""
     private var activeRoute: ConnectionRoute = .none
     private var connectionGeneration: UInt64 = 0
     private let queue = DispatchQueue(label: "com.mtog.session-client", qos: .userInitiated)
@@ -40,6 +42,7 @@ final class SessionClient: ObservableObject {
         case none
         case adb
         case lan(host: String, port: UInt16)
+        case bonjour(name: String)
 
         var wireName: String {
             switch self {
@@ -49,17 +52,21 @@ final class SessionClient: ObservableObject {
                 return "usb-adb-dev"
             case .lan:
                 return "secure-lan-dev"
+            case .bonjour:
+                return "secure-lan-mdns-dev"
             }
         }
 
         var description: String {
             switch self {
             case .none:
-                return "No active transport"
+                return "활성 연결 없음"
             case .adb:
-                return "USB ADB Dev Mode"
+                return "USB 개발 모드"
             case .lan(let host, let port):
-                return "Wireless LAN \(host):\(port)"
+                return "Wi-Fi \(host):\(port)"
+            case .bonjour(let name):
+                return "Wi-Fi \(name)"
             }
         }
     }
@@ -79,10 +86,14 @@ final class SessionClient: ObservableObject {
     func connectOverLAN(host rawHost: String, port: UInt16 = 46001) async {
         let host = rawHost.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !host.isEmpty else {
-            markFailed("Wireless host is empty")
+            markFailed("갤럭시 IP를 입력하세요")
             return
         }
         await connectOverLANInternal(host: host, port: port, isReconnectAttempt: false)
+    }
+
+    func connectOverBonjour(endpoint: NWEndpoint, displayName: String) async {
+        await connectOverBonjourInternal(endpoint: endpoint, displayName: displayName, isReconnectAttempt: false)
     }
 
     private func connectOverADBInternal(isReconnectAttempt: Bool) async {
@@ -95,6 +106,8 @@ final class SessionClient: ObservableObject {
         stopHeartbeat()
         connection?.cancel()
         connection = nil
+        activeBonjourEndpoint = nil
+        activeBonjourName = ""
         connectionGeneration += 1
         state = .preparingBridge
         activeRoute = .adb
@@ -104,13 +117,13 @@ final class SessionClient: ObservableObject {
         lastInboundAt = nil
         receiveBuffer.removeAll(keepingCapacity: false)
         healthText = isReconnectAttempt
-            ? "Reconnect attempt \(reconnectAttempt) preparing ADB bridge"
-            : "Preparing ADB bridge"
+            ? "재연결 \(reconnectAttempt)회차: USB 연결 준비 중"
+            : "USB 연결 준비 중"
 
         do {
             try bridge.prepare()
             state = .connecting
-            healthText = "Opening localhost ADB tunnel"
+            healthText = "USB 터널을 여는 중"
 
             let connection = NWConnection(
                 host: "127.0.0.1",
@@ -146,6 +159,8 @@ final class SessionClient: ObservableObject {
         stopHeartbeat()
         connection?.cancel()
         connection = nil
+        activeBonjourEndpoint = nil
+        activeBonjourName = ""
         connectionGeneration += 1
         state = .connecting
         activeRoute = .lan(host: host, port: port)
@@ -155,18 +170,14 @@ final class SessionClient: ObservableObject {
         lastInboundAt = nil
         receiveBuffer.removeAll(keepingCapacity: false)
         healthText = isReconnectAttempt
-            ? "Reconnect attempt \(reconnectAttempt) opening wireless LAN session"
-            : "Opening wireless LAN session"
+            ? "재연결 \(reconnectAttempt)회차: Wi-Fi 연결 여는 중"
+            : "Wi-Fi 연결 여는 중"
 
-        let adbSerial = "\(host):5555"
         do {
-            healthText = "Preparing Galaxy app over wireless ADB"
-            _ = try bridge.connectWirelessADB(host: host)
-            try bridge.startCompanionApp(serial: adbSerial)
-            healthText = "Opening wireless LAN session"
+            healthText = "갤럭시 Wi-Fi 수신 상태 확인 중"
             try waitForLANPort(host: host, port: port, timeoutSeconds: 5)
         } catch {
-            healthText = "Wireless app bootstrap failed; trying direct socket"
+            healthText = "Wi-Fi 수신 상태를 확인하지 못했지만 직접 연결을 시도합니다"
         }
 
         let connection = NWConnection(
@@ -174,6 +185,48 @@ final class SessionClient: ObservableObject {
             port: NWEndpoint.Port(rawValue: port)!,
             using: .tcp
         )
+        self.connection = connection
+        let generation = connectionGeneration
+        currentSessionId = UUID().uuidString
+        outboundSequenceNo = 0
+        replayGuard.reset()
+
+        connection.stateUpdateHandler = { [weak self] newState in
+            Task { @MainActor in
+                self?.handle(state: newState, generation: generation)
+            }
+        }
+        connection.start(queue: queue)
+        receiveLoop(generation: generation)
+    }
+
+    private func connectOverBonjourInternal(endpoint: NWEndpoint, displayName: String, isReconnectAttempt: Bool) async {
+        if !isReconnectAttempt {
+            shouldAutoReconnect = true
+            reconnectTask?.cancel()
+            reconnectTask = nil
+            reconnectAttempt = 0
+        }
+        stopHeartbeat()
+        connection?.cancel()
+        connection = nil
+        connectionGeneration += 1
+        state = .connecting
+        activeRoute = .bonjour(name: displayName)
+        activeBonjourEndpoint = endpoint
+        activeBonjourName = displayName
+        activeTransportDescription = activeRoute.description
+        lastErrorMessage = nil
+        lastReceivedMessage = nil
+        lastInboundAt = nil
+        receiveBuffer.removeAll(keepingCapacity: false)
+        healthText = isReconnectAttempt
+            ? "재연결 \(reconnectAttempt)회차: 찾은 기기에 Wi-Fi 연결 중"
+            : "찾은 기기에 Wi-Fi 연결 중"
+
+        let parameters = NWParameters.tcp
+        parameters.includePeerToPeer = true
+        let connection = NWConnection(to: endpoint, using: parameters)
         self.connection = connection
         let generation = connectionGeneration
         currentSessionId = UUID().uuidString
@@ -237,10 +290,12 @@ final class SessionClient: ObservableObject {
         connectionGeneration += 1
         connection?.cancel()
         connection = nil
+        activeBonjourEndpoint = nil
+        activeBonjourName = ""
         activeRoute = .none
         activeTransportDescription = activeRoute.description
         state = .idle
-        healthText = "Disconnected by user"
+        healthText = "사용자가 연결을 해제했습니다"
         if routeBeforeDisconnect == .adb {
             try? bridge.clearForward()
         }
@@ -455,7 +510,7 @@ final class SessionClient: ObservableObject {
         do {
             let data = try SessionCodec.encodeLine(message)
             guard data.count <= maxOutboundFrameBytes else {
-                lastErrorMessage = "Frame too large for MVP transport"
+                lastErrorMessage = "전송 데이터가 너무 큽니다"
                 return
             }
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -500,7 +555,7 @@ final class SessionClient: ObservableObject {
             reconnectTask?.cancel()
             reconnectTask = nil
             activeTransportDescription = activeRoute.description
-            healthText = "Connected over \(activeRoute.description). Heartbeat active."
+            healthText = "\(activeRoute.description)로 연결됨. 상태 확인 중"
             startHeartbeat()
             Task {
                 await sendHello()
@@ -510,10 +565,10 @@ final class SessionClient: ObservableObject {
         case .cancelled:
             stopHeartbeat()
             if shouldAutoReconnect {
-                markFailed("ADB tunnel cancelled")
+                markFailed("USB 터널이 취소되었습니다")
             } else {
                 state = .idle
-                healthText = "Disconnected"
+                healthText = "연결 해제됨"
             }
         default:
             break
@@ -537,7 +592,7 @@ final class SessionClient: ObservableObject {
                     if self.receiveBuffer.count > self.maxReceiveBufferBytes {
                         self.receiveBuffer.removeAll(keepingCapacity: false)
                         self.connection?.cancel()
-                        self.markFailed("Inbound frame too large for MVP transport")
+                        self.markFailed("받은 데이터가 너무 큽니다")
                         return
                     }
                     self.consumeBufferedMessages()
@@ -545,10 +600,10 @@ final class SessionClient: ObservableObject {
 
                 if isComplete {
                     if self.shouldAutoReconnect {
-                        self.markFailed("ADB tunnel closed")
+                        self.markFailed("USB 터널이 닫혔습니다")
                     } else {
                         self.state = .idle
-                        self.healthText = "Connection closed"
+                        self.healthText = "연결이 닫혔습니다"
                     }
                     return
                 }
@@ -568,7 +623,7 @@ final class SessionClient: ObservableObject {
             do {
                 let message = try SessionCodec.decodeLine(Data(chunk))
                 guard replayGuard.accept(message) else {
-                    lastErrorMessage = "Ignored stale or replayed frame for session \(message.sessionId)"
+                    lastErrorMessage = "오래되었거나 반복된 메시지를 무시했습니다"
                     continue
                 }
                 lastReceivedMessage = message
@@ -579,11 +634,11 @@ final class SessionClient: ObservableObject {
                         await self.send(self.makeEnvelope(type: .pong, payload: ["replyTo": message.id.uuidString]))
                     }
                 } else if message.type == .pong {
-                    healthText = "Heartbeat ok \(Self.timeLabel(Date()))"
+                    healthText = "상태 확인 정상 \(Self.timeLabel(Date()))"
                 } else if message.type == .error {
-                    let reason = message.payload["reason"] ?? message.payload["code"] ?? "Peer reported an error"
+                    let reason = message.payload["reason"] ?? message.payload["code"] ?? "상대 기기에서 오류를 보냈습니다"
                     lastErrorMessage = reason
-                    healthText = "Peer error: \(reason)"
+                    healthText = "상대 기기 오류: \(reason)"
                 }
             } catch {
                 lastErrorMessage = error.localizedDescription
@@ -595,7 +650,7 @@ final class SessionClient: ObservableObject {
         stopHeartbeat()
         state = .failed(message)
         lastErrorMessage = message
-        healthText = "Connection issue: \(message)"
+        healthText = "연결 문제: \(message)"
         scheduleReconnect(reason: message)
     }
 
@@ -607,7 +662,7 @@ final class SessionClient: ObservableObject {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     guard let self, self.state == .connected else { return }
-                    self.healthText = "Heartbeat sent \(Self.timeLabel(Date()))"
+                    self.healthText = "상태 확인 보냄 \(Self.timeLabel(Date()))"
                     Task {
                         await self.send(
                             self.makeEnvelope(
@@ -643,14 +698,14 @@ final class SessionClient: ObservableObject {
                 let maxAttempts = await MainActor.run { self?.maxReconnectAttempts ?? 0 }
                 guard attempt <= maxAttempts else {
                     await MainActor.run {
-                        self?.healthText = "Auto reconnect stopped after repeated failures"
+                        self?.healthText = "반복 실패로 자동 재연결을 중지했습니다"
                     }
                     return
                 }
 
                 let delaySeconds = min(2 + attempt, 10)
                 await MainActor.run {
-                    self?.healthText = "Reconnect \(attempt)/\(maxAttempts) in \(delaySeconds)s: \(reason)"
+                    self?.healthText = "\(delaySeconds)초 후 재연결 \(attempt)/\(maxAttempts): \(reason)"
                 }
                 try? await Task.sleep(nanoseconds: UInt64(delaySeconds) * 1_000_000_000)
                 guard !Task.isCancelled else { return }
@@ -661,6 +716,17 @@ final class SessionClient: ObservableObject {
                     await self?.connectOverADBInternal(isReconnectAttempt: true)
                 case .lan(let host, let port):
                     await self?.connectOverLANInternal(host: host, port: port, isReconnectAttempt: true)
+                case .bonjour:
+                    guard let endpoint = await MainActor.run(body: { self?.activeBonjourEndpoint }),
+                          let displayName = await MainActor.run(body: { self?.activeBonjourName }),
+                          !displayName.isEmpty else {
+                        return
+                    }
+                    await self?.connectOverBonjourInternal(
+                        endpoint: endpoint,
+                        displayName: displayName,
+                        isReconnectAttempt: true
+                    )
                 case .none:
                     return
                 }

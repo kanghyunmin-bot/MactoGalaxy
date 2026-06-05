@@ -18,20 +18,20 @@ final class ScrcpyMirrorBridge: @unchecked Sendable {
         queue.async { [weak self] in
             guard let self else { return }
             if self.process?.isRunning == true {
-                self.reportStatus("Mirror is already running")
+                self.reportStatus("미러링이 이미 실행 중입니다")
                 self.reportState(true)
                 return
             }
             self.isStopping = false
 
             guard let scrcpyURL = self.resolveExecutableURL(name: "scrcpy") else {
-                self.reportStatus("scrcpy not found. Install with: brew install scrcpy")
+                self.reportStatus("scrcpy를 찾을 수 없습니다. 터미널에서 brew install scrcpy 로 설치하세요.")
                 self.reportState(false)
                 return
             }
 
             guard let serial = self.detectPreferredUsbAdbSerial() else {
-                self.reportStatus("No authorized USB Galaxy found. Connect USB-C and allow USB debugging.")
+                self.reportStatus("허용된 USB 갤럭시를 찾지 못했습니다. USB-C 연결 후 USB 디버깅 허용을 눌러주세요.")
                 self.reportState(false)
                 return
             }
@@ -75,9 +75,9 @@ final class ScrcpyMirrorBridge: @unchecked Sendable {
                     self.outputPipe?.fileHandleForReading.readabilityHandler = nil
                     self.errorPipe?.fileHandleForReading.readabilityHandler = nil
                     if self.isStopping || process.terminationStatus == 0 {
-                        self.reportStatus("Mirror stopped")
+                        self.reportStatus("미러링이 종료되었습니다")
                     } else {
-                        self.reportStatus("Mirror stopped with scrcpy exit \(process.terminationStatus)")
+                        self.reportStatus("미러링이 종료되었습니다. scrcpy 종료 코드: \(process.terminationStatus)")
                     }
                     self.isStopping = false
                     self.reportState(false)
@@ -89,10 +89,10 @@ final class ScrcpyMirrorBridge: @unchecked Sendable {
                 self.process = process
                 self.outputPipe = outputPipe
                 self.errorPipe = errorPipe
-                self.reportStatus("Mirror running over USB: \(serial)")
+                self.reportStatus("USB 미러링 실행 중: \(serial)")
                 self.reportState(true)
             } catch {
-                self.reportStatus("Mirror failed: \(error.localizedDescription)")
+                self.reportStatus("미러링 시작 실패: \(error.localizedDescription)")
                 self.reportState(false)
             }
         }
@@ -104,7 +104,7 @@ final class ScrcpyMirrorBridge: @unchecked Sendable {
             self.isStopping = true
             self.process?.terminate()
             self.process = nil
-            self.reportStatus("Stopping mirror")
+            self.reportStatus("미러링을 종료하는 중")
             self.reportState(false)
         }
     }
@@ -123,17 +123,17 @@ final class ScrcpyMirrorBridge: @unchecked Sendable {
     private func userFacingStatus(from line: String, isError: Bool) -> String? {
         if let range = line.range(of: "INFO: Device:") {
             let device = line[range.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
-            return device.isEmpty ? "Mirror running" : "Mirror running on \(device)"
+            return device.isEmpty ? "미러링 실행 중" : "\(device) 미러링 실행 중"
         }
 
         if let range = line.range(of: "ERROR:") {
             let message = line[range.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
-            return message.isEmpty ? "scrcpy error" : "scrcpy error: \(message)"
+            return message.isEmpty ? "scrcpy 오류" : "scrcpy 오류: \(message)"
         }
 
         if let range = line.range(of: "WARN:") {
             let message = line[range.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
-            return message.isEmpty ? "scrcpy warning" : "scrcpy warning: \(message)"
+            return message.isEmpty ? "scrcpy 경고" : "scrcpy 경고: \(message)"
         }
 
         if isError, !line.contains("INFO:") {

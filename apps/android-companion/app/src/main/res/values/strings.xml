@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MtoG</string>
-    <string name="accessibility_service_description">Enables remote touch, gesture, and back action injection for direct Mac control.</string>
-    <string name="keyboard_service_name">MtoG Keyboard</string>
-    <string name="keyboard_service_subtype">Remote Unicode Keyboard</string>
+    <string name="accessibility_service_description">Mac에서 갤럭시 터치, 제스처, 뒤로 가기 동작을 보낼 수 있게 합니다.</string>
+    <string name="keyboard_service_name">MtoG 키보드</string>
+    <string name="keyboard_service_subtype">원격 한글/유니코드 키보드</string>
 </resources>

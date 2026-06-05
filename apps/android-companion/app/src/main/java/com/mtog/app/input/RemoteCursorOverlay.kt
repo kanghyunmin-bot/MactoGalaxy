@@ -94,6 +94,10 @@ private class CursorView(context: Context) : View(context) {
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
     }
+    private val hotspotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0x663A84FF
+        style = Paint.Style.FILL
+    }
 
     private var pressedState = false
     private val pointerPath = Path()
@@ -129,10 +133,6 @@ private class CursorView(context: Context) : View(context) {
         canvas.drawPath(pointerPath, strokePaint)
 
         if (pressedState) {
-            val hotspotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0x663A84FF
-                style = Paint.Style.FILL
-            }
             canvas.drawCircle(size * 0.10f, size * 0.10f, size * 0.09f, hotspotPaint)
         }
     }

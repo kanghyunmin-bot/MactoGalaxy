@@ -61,7 +61,7 @@ class SessionForegroundService : Service() {
             }
             else -> startSessionServer()
         }
-        return START_NOT_STICKY
+        return START_STICKY
     }
 
     override fun onDestroy() {
@@ -110,12 +110,12 @@ class SessionForegroundService : Service() {
 
         val builder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("MtoG manual clipboard")
-            .setContentText("Copy on Galaxy, then tap Sync Clipboard to send it to Mac.")
+            .setContentTitle("MtoG 연결 대기 중")
+            .setContentText("Mac이 개인 Wi-Fi 또는 USB로 연결할 수 있습니다. 복사 후 클립보드 동기화를 누르세요.")
             .setContentIntent(pendingIntent)
             .addAction(
                 android.R.drawable.ic_menu_upload,
-                "Sync Clipboard",
+                "클립보드 동기화",
                 clipboardSyncPendingIntent
             )
             .setOngoing(true)
@@ -126,10 +126,10 @@ class SessionForegroundService : Service() {
         val manager = getSystemService(NotificationManager::class.java)
         val channel = NotificationChannel(
             channelId,
-            "MtoG Session",
+            "MtoG 연결",
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Manual clipboard sync and trusted Mac session listener"
+            description = "개인 Wi-Fi/USB 연결과 수동 클립보드 동기화"
         }
         manager.createNotificationChannel(channel)
     }

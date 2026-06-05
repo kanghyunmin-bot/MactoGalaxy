@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.util.Locale
 import java.text.DateFormat
 import java.util.Date
 import java.util.UUID
@@ -71,7 +72,7 @@ object ClipboardHistoryStore {
         val next = ClipboardHistoryRecord(
             kind = normalizedKind,
             kindBadge = badgeFor(normalizedKind),
-            title = title.ifBlank { "Clipboard item" }.take(96),
+            title = title.ifBlank { "클립보드 항목" }.take(96),
             detail = detail.take(140),
             timestamp = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date()),
             size = humanSize(sizeBytes),
@@ -124,7 +125,7 @@ object ClipboardHistoryStore {
         if (item.kind == "text" || item.kind == "url") {
             val text = item.text?.takeIf { it.isNotEmpty() } ?: return false
             clipboard.setPrimaryClip(ClipData.newPlainText("MtoG History", text))
-            SessionRuntime.markClipboardEvent("Re-copied ${item.kind} history item")
+            SessionRuntime.markClipboardEvent("${kindLabel(item.kind)} 기록을 다시 복사했습니다")
             return true
         }
 
@@ -140,7 +141,7 @@ object ClipboardHistoryStore {
             ClipData.Item(uri)
         )
         clipboard.setPrimaryClip(clip)
-        SessionRuntime.markClipboardEvent("Re-copied ${item.kind} history item")
+        SessionRuntime.markClipboardEvent("${kindLabel(item.kind)} 기록을 다시 복사했습니다")
         return true
     }
 
@@ -173,11 +174,11 @@ object ClipboardHistoryStore {
         }
         val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return false
         return runCatching {
-            resolver.openOutputStream(uri)?.use { it.write(bytes) } ?: error("No output stream")
+            resolver.openOutputStream(uri)?.use { it.write(bytes) } ?: error("저장 경로를 열 수 없습니다")
             values.clear()
             values.put(MediaStore.MediaColumns.IS_PENDING, 0)
             resolver.update(uri, values, null, null)
-            SessionRuntime.markClipboardEvent("Downloaded history item to Downloads/MtoG Clipboard")
+            SessionRuntime.markClipboardEvent("기록 항목을 다운로드/MtoG Clipboard 폴더에 저장했습니다")
             true
         }.getOrElse {
             runCatching { resolver.delete(uri, null, null) }
@@ -228,7 +229,7 @@ object ClipboardHistoryStore {
                             id = item.optString("id", UUID.randomUUID().toString()),
                             kind = kind,
                             kindBadge = item.optString("kindBadge", badgeFor(kind)),
-                            title = item.optString("title", "Clipboard item"),
+                            title = item.optString("title", "클립보드 항목"),
                             detail = item.optString("detail", ""),
                             timestamp = item.optString("timestamp", ""),
                             size = item.optString("size", ""),
@@ -299,10 +300,20 @@ object ClipboardHistoryStore {
         }
     }
 
+    private fun kindLabel(kind: String): String {
+        return when (kind.lowercase()) {
+            "url" -> "URL"
+            "image" -> "이미지"
+            "video" -> "영상"
+            "file" -> "파일"
+            else -> "텍스트"
+        }
+    }
+
     private fun humanSize(sizeBytes: Int): String {
         return when {
-            sizeBytes >= 1_000_000 -> String.format("%.1f MB", sizeBytes / 1_000_000.0)
-            sizeBytes >= 1_000 -> String.format("%.1f KB", sizeBytes / 1_000.0)
+            sizeBytes >= 1_000_000 -> String.format(Locale.US, "%.1f MB", sizeBytes / 1_000_000.0)
+            sizeBytes >= 1_000 -> String.format(Locale.US, "%.1f KB", sizeBytes / 1_000.0)
             else -> "$sizeBytes B"
         }
     }

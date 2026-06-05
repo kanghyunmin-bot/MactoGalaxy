@@ -123,7 +123,7 @@ final class ControlModeInputController: @unchecked Sendable {
         }
 
         guard usesNativeHidInput() || allowAccessibilityFallbackInput else {
-            statusHandler?("Android Control Mode는 이제 네이티브 HID만 사용합니다. USB에서는 Start AOA HID를 먼저 켜고, 무선 조작은 window-local Mirror Mode를 사용하세요.")
+            statusHandler?("Android 제어 모드는 네이티브 HID만 사용합니다. USB에서는 USB HID를 먼저 켜고, 무선 조작은 미러링 창 안에서 사용하세요.")
             return
         }
 
@@ -153,7 +153,7 @@ final class ControlModeInputController: @unchecked Sendable {
             self?.sendPointerOverlayUpdate()
         }
         performHaptic(.modeEnter)
-        statusHandler?("Android Control Mode: Mac 입력을 Android 네이티브 HID 마우스/키보드로 전송 중")
+        statusHandler?("Android 제어 모드: Mac 입력을 Android 네이티브 HID 마우스/키보드로 전송 중")
     }
 
     private func usesNativeHidInput() -> Bool {
@@ -268,7 +268,7 @@ final class ControlModeInputController: @unchecked Sendable {
             callback: callback,
             userInfo: ref
         ) else {
-            statusHandler?("macOS 입력 캡처를 시작하지 못했습니다. 접근성/Input Monitoring 권한을 확인하세요.")
+            statusHandler?("macOS 입력 캡처를 시작하지 못했습니다. 접근성/입력 모니터링 권한을 확인하세요.")
             return
         }
 
@@ -527,7 +527,7 @@ final class ControlModeInputController: @unchecked Sendable {
             performHaptic(.secondaryClick)
             hidBridge.sendMouse(buttons: 2, dx: 0, dy: 0)
             hidBridge.sendMouse(buttons: 0, dx: 0, dy: 0)
-            statusHandler?("보조 클릭을 AOA HID right click으로 전송")
+            statusHandler?("보조 클릭을 USB HID 오른쪽 클릭으로 전송")
             return
         }
         let point = stateQueue.sync { normalizedRemotePoint(for: cursorPoint) }

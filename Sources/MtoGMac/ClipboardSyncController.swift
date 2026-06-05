@@ -19,11 +19,11 @@ struct ClipboardSyncPayload {
         switch kind {
         case .text, .url:
             let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            return trimmed.isEmpty ? "Empty clipboard" : String(trimmed.prefix(48))
+            return trimmed.isEmpty ? "빈 클립보드" : String(trimmed.prefix(48))
         case .image, .video, .file:
             return fileName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
                 ? fileName!
-                : "Clipboard item"
+                : "클립보드 항목"
         }
     }
 
@@ -386,16 +386,16 @@ final class ClipboardSyncController {
 
     private func filePayload(for fileURL: URL) -> ClipboardSyncPayload? {
         guard isRegularReadableFile(fileURL) else {
-            diagnosticHandler?("Mac clipboard file is not a regular readable file")
+            diagnosticHandler?("Mac 클립보드 파일을 읽을 수 없습니다")
             return nil
         }
         guard let fileData = try? Data(contentsOf: fileURL, options: [.mappedIfSafe]),
               !fileData.isEmpty else {
-            diagnosticHandler?("Mac clipboard file could not be read")
+            diagnosticHandler?("Mac 클립보드 파일을 열지 못했습니다")
             return nil
         }
         guard fileData.count <= maxTransferBytes else {
-            diagnosticHandler?("Mac clipboard item is over 24 MB; URI/chunk transfer is required")
+            diagnosticHandler?("클립보드 항목이 24MB를 초과합니다. 대용량 전송 방식이 필요합니다")
             return nil
         }
 
@@ -426,7 +426,7 @@ final class ClipboardSyncController {
             return nil
         }
         guard pngData.count <= maxTransferBytes else {
-            diagnosticHandler?("Mac clipboard image is over 24 MB; URI/chunk transfer is required")
+            diagnosticHandler?("클립보드 이미지가 24MB를 초과합니다. 대용량 전송 방식이 필요합니다")
             return nil
         }
 

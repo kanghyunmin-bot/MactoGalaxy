@@ -31,7 +31,7 @@ if [ -x "$ROOT_DIR/scripts/build-aoa-hid-probe.sh" ]; then
 fi
 
 if [ ! -f "$ARM64_BINARY" ] || [ ! -f "$X64_BINARY" ] || [ ! -f "$ARM64_EXTERNAL_WORKER" ] || [ ! -f "$X64_EXTERNAL_WORKER" ]; then
-  echo "Universal release inputs not found" >&2
+  echo "유니버설 앱 빌드 입력 파일을 찾지 못했습니다" >&2
   exit 1
 fi
 
@@ -57,7 +57,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 <plist version="1.0">
 <dict>
     <key>CFBundleDevelopmentRegion</key>
-    <string>en</string>
+    <string>ko</string>
     <key>CFBundleExecutable</key>
     <string>MtoGMac</string>
     <key>CFBundleIdentifier</key>
@@ -78,6 +78,12 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
     <string>14.0</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>MtoG가 개인 로컬 네트워크에서 갤럭시 탭을 찾아 연결합니다.</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_mtog._tcp</string>
+    </array>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
 </dict>
@@ -90,15 +96,15 @@ cp -R "$APP_DIR" "$STAGING_DIR/$APP_NAME"
 ln -s /Applications "$STAGING_DIR/Applications"
 
 cat > "$README_PATH" <<'README'
-MtoG macOS build
+MtoG macOS 빌드
 
-This DMG contains an ad-hoc signed development build.
-It is not notarized yet.
+이 DMG는 개발용 임시 서명 빌드입니다.
+아직 Apple 공증 빌드는 아닙니다.
 
-Install:
-1. Drag MtoG.app into Applications
-2. Open the app
-3. If Gatekeeper blocks it, right-click the app and choose Open
+설치:
+1. MtoG.app을 Applications 폴더로 드래그하세요
+2. 앱을 실행하세요
+3. macOS가 차단하면 앱을 우클릭한 뒤 열기를 선택하세요
 README
 
 hdiutil create \
@@ -107,6 +113,6 @@ hdiutil create \
   -format UDZO \
   "$DMG_PATH" >/dev/null
 
-echo "Created:"
+echo "생성 완료:"
 echo "  $APP_DIR"
 echo "  $DMG_PATH"

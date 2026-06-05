@@ -14,6 +14,7 @@ import com.mtog.app.session.SessionEnvelope
 import com.mtog.app.session.SessionMessageType
 import com.mtog.app.session.SessionReplayGuard
 import com.mtog.app.session.SessionRuntime
+import com.mtog.app.transport.WirelessServiceAdvertiser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,6 +45,7 @@ class AdbLoopbackServer(
     private val deviceName: String by lazy { DeviceIdentityStore.deviceName() }
     private val publicKeyBase64: String by lazy { DeviceIdentityStore.getOrCreatePublicKeyBase64() }
     private val clipboardSyncManager = ClipboardSyncManager(appContext)
+    private val wirelessAdvertiser = WirelessServiceAdvertiser(appContext)
 
     private var serverSocket: ServerSocket? = null
     private var acceptJob: Job? = null
@@ -74,6 +76,7 @@ class AdbLoopbackServer(
                 server.bind(InetSocketAddress(InetAddress.getByName("0.0.0.0"), port))
                 serverSocket = server
                 SessionRuntime.markListening(port, wirelessEndpointLabel())
+                wirelessAdvertiser.start(port, deviceName, deviceId)
 
                 while (isActive) {
                     val socket = server.accept()
@@ -82,7 +85,7 @@ class AdbLoopbackServer(
                 }
             } catch (error: Exception) {
                 if (scope.isActive) {
-                    SessionRuntime.markError("ADB listener failed: ${error.message ?: "unknown"}")
+                    SessionRuntime.markError("연결 수신기를 시작하지 못했습니다: ${error.message ?: "알 수 없음"}")
                 }
             }
         }
@@ -93,6 +96,7 @@ class AdbLoopbackServer(
         clientJob = null
         closeClient(clientSocket)
         clipboardSyncManager.stop()
+        wirelessAdvertiser.stop()
         outboundWriter = null
         activeSessionId = null
         activePeerTrusted = false
@@ -107,13 +111,13 @@ class AdbLoopbackServer(
 
     fun syncCurrentClipboard(): Boolean {
         val payload = clipboardSyncManager.currentPayload() ?: run {
-            SessionRuntime.markClipboardEvent("No readable Android clipboard item. Copy first, then tap Sync Clipboard.")
+            SessionRuntime.markClipboardEvent("읽을 수 있는 갤럭시 클립보드가 없습니다. 먼저 복사한 뒤 클립보드 동기화를 누르세요.")
             return false
         }
         val accepted = handleLocalClipboardPayload(payload)
         if (accepted) {
             clipboardSyncManager.recordManualLocalPayload(payload)
-            SessionRuntime.markClipboardEvent("Manual Android ${payload.kind} clipboard sync requested")
+            SessionRuntime.markClipboardEvent("갤럭시 ${kindLabel(payload.kind)} 클립보드 동기화를 요청했습니다")
         }
         return accepted
     }
@@ -139,7 +143,7 @@ class AdbLoopbackServer(
                 }
             } catch (error: Exception) {
                 if (scope.isActive) {
-                    SessionRuntime.markError("Client loop failed: ${error.message ?: "unknown"}")
+                    SessionRuntime.markError("Mac 연결 처리 중 오류가 발생했습니다: ${error.message ?: "알 수 없음"}")
                 }
             }
         }
@@ -160,7 +164,7 @@ class AdbLoopbackServer(
             while (scope.isActive) {
                 val line = withContext(Dispatchers.IO) { reader.readLine() } ?: break
                 if (line.length > maxFrameCharacters) {
-                    SessionRuntime.markError("Rejected oversized inbound frame")
+                    SessionRuntime.markError("너무 큰 수신 메시지를 거절했습니다")
                     break
                 }
                 val inbound = SessionCodec.decodeLine(line)
@@ -168,25 +172,25 @@ class AdbLoopbackServer(
                     activeSessionId = inbound.sessionId
                 }
                 if (inbound.sessionId != activeSessionId) {
-                    SessionRuntime.markError("Rejected frame from unexpected session ${inbound.sessionId}")
+                    SessionRuntime.markError("예상하지 못한 세션의 메시지를 거절했습니다: ${inbound.sessionId}")
                     continue
                 }
                 if (!replayGuard.accept(inbound)) {
-                    PairingStore.markStatus("Ignored stale or replayed frame")
+                    PairingStore.markStatus("오래되었거나 재전송된 메시지를 무시했습니다")
                     continue
                 }
-                SessionRuntime.markConnected(inbound.deviceName.ifBlank { "Mac controller" })
+                SessionRuntime.markConnected(inbound.deviceName.ifBlank { "Mac 제어기" })
                 SessionRuntime.markInbound(inbound.type.wireName)
 
                 if (requiresTrustedPeer(inbound.type) && !activePeerTrusted) {
-                    PairingStore.markStatus("Blocked ${inbound.type.wireName}. Pair and trust this Mac first.")
+                    PairingStore.markStatus("먼저 이 Mac을 페어링하고 신뢰해야 합니다: ${inbound.type.wireName}")
                     send(
                         writer,
                         buildEnvelope(
                             type = SessionMessageType.Error,
                             payload = mapOf(
                                 "code" to "peer_not_trusted",
-                                "reason" to "Pair and trust this Mac before control or clipboard sync."
+                                "reason" to "제어 또는 클립보드 동기화 전에 이 Mac을 페어링하고 신뢰해야 합니다."
                             )
                         )
                     )
@@ -194,14 +198,14 @@ class AdbLoopbackServer(
                 }
 
                 if (isDeprecatedAccessibilityInput(inbound.type)) {
-                    SessionRuntime.markControlEvent("Blocked ${inbound.type.wireName}: native HID input is required")
+                    SessionRuntime.markControlEvent("네이티브 HID 입력이 필요해 ${inbound.type.wireName} 요청을 막았습니다")
                     send(
                         writer,
                         buildEnvelope(
                             type = SessionMessageType.Error,
                             payload = mapOf(
                                 "code" to "native_hid_required",
-                                "reason" to "Accessibility-based control is disabled. Use USB AOA HID or scrcpy UHID."
+                                "reason" to "접근성 기반 제어는 비활성화되었습니다. USB AOA HID 또는 scrcpy UHID를 사용하세요."
                             )
                         )
                     )
@@ -251,38 +255,38 @@ class AdbLoopbackServer(
                         val peerPublicKey = inbound.payload["publicKey"].orEmpty()
 
                         if (expectedCode.length != 4) {
-                            PairingStore.markStatus("Set the 4-digit code on Android before pairing")
+                            PairingStore.markStatus("페어링 전에 Android에서 4자리 코드를 설정하세요")
                             send(
                                 writer,
                                 buildEnvelope(
                                     type = SessionMessageType.PairResult,
                                     payload = mapOf(
                                         "status" to "rejected",
-                                        "reason" to "Android pairing code is not set"
+                                        "reason" to "Android 페어링 코드가 설정되지 않았습니다"
                                     )
                                 )
                             )
                         } else if (receivedCode != expectedCode) {
-                            PairingStore.markStatus("Pairing rejected. 4-digit code mismatch.")
+                            PairingStore.markStatus("페어링이 거절되었습니다. 4자리 코드가 다릅니다.")
                             send(
                                 writer,
                                 buildEnvelope(
                                     type = SessionMessageType.PairResult,
                                     payload = mapOf(
                                         "status" to "rejected",
-                                        "reason" to "4-digit code mismatch"
+                                        "reason" to "4자리 코드가 일치하지 않습니다"
                                     )
                                 )
                             )
                         } else if (peerPublicKey.isBlank()) {
-                            PairingStore.markStatus("Pairing rejected. Peer key missing.")
+                            PairingStore.markStatus("페어링이 거절되었습니다. 상대 기기 키가 없습니다.")
                             send(
                                 writer,
                                 buildEnvelope(
                                     type = SessionMessageType.PairResult,
                                     payload = mapOf(
                                         "status" to "rejected",
-                                        "reason" to "Peer public key missing"
+                                        "reason" to "상대 기기 공개 키가 없습니다"
                                     )
                                 )
                             )
@@ -328,7 +332,7 @@ class AdbLoopbackServer(
                         }
                         RemoteInputBridge.showRemoteCursor(initialX, initialY, false)
                         SessionRuntime.markControlEvent(
-                            if (edge.isBlank()) "Control mode entered" else "Control mode entered from $edge edge"
+                                if (edge.isBlank()) "제어 모드에 들어갔습니다" else "$edge 코너에서 제어 모드에 들어갔습니다"
                         )
                     }
 
@@ -336,21 +340,21 @@ class AdbLoopbackServer(
                         val reason = inbound.payload["reason"].orEmpty()
                         RemoteInputBridge.hideRemoteCursor()
                         SessionRuntime.markControlEvent(
-                            if (reason.isBlank()) "Control mode exited" else "Control mode exited: $reason"
+                                if (reason.isBlank()) "제어 모드에서 나왔습니다" else "제어 모드 종료: $reason"
                         )
                     }
 
                     SessionMessageType.RemoteBack -> {
                         val ok = RemoteInputBridge.performBack()
                         SessionRuntime.markControlEvent(
-                            if (ok) "Executed Back action" else "Back action failed"
+                            if (ok) "뒤로 가기 실행" else "뒤로 가기 실패"
                         )
                     }
 
                     SessionMessageType.RemoteHome -> {
                         val ok = RemoteInputBridge.performHome()
                         SessionRuntime.markControlEvent(
-                            if (ok) "Executed Home action" else "Home action failed"
+                            if (ok) "홈 실행" else "홈 실행 실패"
                         )
                     }
 
@@ -360,9 +364,9 @@ class AdbLoopbackServer(
                         val ok = RemoteInputBridge.dispatchNormalizedTap(normalizedX, normalizedY)
                         SessionRuntime.markControlEvent(
                             if (ok) {
-                                "Tapped Android at ${"%.2f".format(normalizedX)}, ${"%.2f".format(normalizedY)}"
+                                "탭 실행 ${"%.2f".format(normalizedX)}, ${"%.2f".format(normalizedY)}"
                             } else {
-                                "Tap failed"
+                                "탭 실패"
                             }
                         )
                     }
@@ -373,9 +377,9 @@ class AdbLoopbackServer(
                         val ok = RemoteInputBridge.beginNormalizedTouch(normalizedX, normalizedY)
                         SessionRuntime.markControlEvent(
                             if (ok) {
-                                "Touch start ${"%.2f".format(normalizedX)}, ${"%.2f".format(normalizedY)}"
+                                "터치 시작 ${"%.2f".format(normalizedX)}, ${"%.2f".format(normalizedY)}"
                             } else {
-                                "Touch start failed"
+                                "터치 시작 실패"
                             }
                         )
                     }
@@ -386,9 +390,9 @@ class AdbLoopbackServer(
                         val ok = RemoteInputBridge.moveNormalizedTouch(normalizedX, normalizedY)
                         SessionRuntime.markControlEvent(
                             if (ok) {
-                                "Touch move ${"%.2f".format(normalizedX)}, ${"%.2f".format(normalizedY)}"
+                                "터치 이동 ${"%.2f".format(normalizedX)}, ${"%.2f".format(normalizedY)}"
                             } else {
-                                "Touch move failed"
+                                "터치 이동 실패"
                             }
                         )
                     }
@@ -399,9 +403,9 @@ class AdbLoopbackServer(
                         val ok = RemoteInputBridge.endNormalizedTouch(normalizedX, normalizedY)
                         SessionRuntime.markControlEvent(
                             if (ok) {
-                                "Touch end ${"%.2f".format(normalizedX)}, ${"%.2f".format(normalizedY)}"
+                                "터치 종료 ${"%.2f".format(normalizedX)}, ${"%.2f".format(normalizedY)}"
                             } else {
-                                "Touch end failed"
+                                "터치 종료 실패"
                             }
                         )
                     }
@@ -430,9 +434,9 @@ class AdbLoopbackServer(
                         }
                         SessionRuntime.markControlEvent(
                             if (ok) {
-                                "Gesture $kind ${"%.2f".format(startX)}, ${"%.2f".format(startY)} -> ${"%.2f".format(endX)}, ${"%.2f".format(endY)}"
+                                "제스처 $kind ${"%.2f".format(startX)}, ${"%.2f".format(startY)} → ${"%.2f".format(endX)}, ${"%.2f".format(endY)}"
                             } else {
-                                "Gesture $kind failed"
+                                "제스처 $kind 실패"
                             }
                         )
                     }
@@ -448,9 +452,9 @@ class AdbLoopbackServer(
                         )
                         SessionRuntime.markControlEvent(
                             if (ok) {
-                                "Pinch ${"%.2f".format(centerX)}, ${"%.2f".format(centerY)} scale=${"%.2f".format(magnification)}"
+                                "핀치 ${"%.2f".format(centerX)}, ${"%.2f".format(centerY)} 배율=${"%.2f".format(magnification)}"
                             } else {
-                                "Pinch failed"
+                                "핀치 실패"
                             }
                         )
                     }
@@ -461,7 +465,7 @@ class AdbLoopbackServer(
                         val pressed = inbound.payload["primaryButtonDown"] == "true"
                         RemoteInputBridge.showRemoteCursor(normalizedX, normalizedY, pressed)
                         SessionRuntime.markControlEvent(
-                            "Remote cursor ${"%.2f".format(normalizedX)}, ${"%.2f".format(normalizedY)}"
+                            "원격 커서 ${"%.2f".format(normalizedX)}, ${"%.2f".format(normalizedY)}"
                         )
                     }
 
@@ -479,12 +483,12 @@ class AdbLoopbackServer(
                         SessionRuntime.markControlEvent(
                             if (ok) {
                                 when {
-                                    usedIme -> "Inserted text through MtoG Keyboard IME path"
-                                    usedAccessibilityInsert -> "Inserted text through accessibility fallback"
-                                    else -> "Inserted text through temporary clipboard paste fallback"
+                                    usedIme -> "MtoG 키보드 입력기로 텍스트를 입력했습니다"
+                                    usedAccessibilityInsert -> "접근성 보조 방식으로 텍스트를 입력했습니다"
+                                    else -> "임시 클립보드 붙여넣기로 텍스트를 입력했습니다"
                                 }
                             } else {
-                                "Text input failed"
+                                "텍스트 입력 실패"
                             }
                         )
                     }
@@ -495,10 +499,10 @@ class AdbLoopbackServer(
                         val ok = usedIme || usedAccessibilityDelete
                         SessionRuntime.markControlEvent(
                             if (ok) {
-                                if (usedIme) "Deleted previous character through MtoG Keyboard IME path"
-                                else "Deleted previous character through native accessibility action"
+                                if (usedIme) "MtoG 키보드 입력기로 이전 글자를 삭제했습니다"
+                                else "Android 편집 동작으로 이전 글자를 삭제했습니다"
                             } else {
-                                "Delete failed"
+                                "삭제 실패"
                             }
                         )
                     }
@@ -509,10 +513,10 @@ class AdbLoopbackServer(
                         val ok = usedIme || usedAccessibilityEnter
                         SessionRuntime.markControlEvent(
                             if (ok) {
-                                if (usedIme) "Executed Enter through MtoG Keyboard IME path"
-                                else "Executed Enter through native editor action"
+                                if (usedIme) "MtoG 키보드 입력기로 Enter를 실행했습니다"
+                                else "Android 편집 동작으로 Enter를 실행했습니다"
                             } else {
-                                "Enter failed"
+                                "Enter 실행 실패"
                             }
                         )
                     }
@@ -531,7 +535,7 @@ class AdbLoopbackServer(
             // Expected when the previous client is replaced or the adb tunnel closes.
         } catch (error: Exception) {
             if (scope.isActive) {
-                SessionRuntime.markError("ADB session closed: ${error.message ?: "unknown"}")
+                SessionRuntime.markError("연결 세션이 종료되었습니다: ${error.message ?: "알 수 없음"}")
             }
         } finally {
             if (clientSocket === socket) {
@@ -550,7 +554,7 @@ class AdbLoopbackServer(
         withContext(Dispatchers.IO) {
             val encoded = String(SessionCodec.encodeLine(message), Charsets.UTF_8)
             if (encoded.length > maxFrameCharacters) {
-                SessionRuntime.markError("Rejected oversized outbound frame")
+                SessionRuntime.markError("너무 큰 송신 메시지를 거절했습니다")
                 return@withContext
             }
             synchronized(writerLock) {
@@ -563,11 +567,11 @@ class AdbLoopbackServer(
 
     private fun handleLocalClipboardPayload(payload: ClipboardTransferPayload): Boolean {
         val writer = outboundWriter ?: run {
-            SessionRuntime.markClipboardEvent("Manual clipboard sync waiting for Mac session")
+            SessionRuntime.markClipboardEvent("Mac 연결 세션을 기다리는 중입니다")
             return false
         }
         if (!activePeerTrusted) {
-            SessionRuntime.markClipboardEvent("Manual clipboard sync blocked until Mac is trusted")
+            SessionRuntime.markClipboardEvent("Mac을 신뢰 기기로 등록해야 클립보드를 보낼 수 있습니다")
             return false
         }
         scope.launch(Dispatchers.IO) {
@@ -578,7 +582,7 @@ class AdbLoopbackServer(
                     payload = payload.toWirePayload()
                 )
             )
-            SessionRuntime.markClipboardEvent("Sent Android ${payload.kind} clipboard to Mac")
+            SessionRuntime.markClipboardEvent("갤럭시 ${kindLabel(payload.kind)} 클립보드를 Mac으로 보냈습니다")
         }
         return true
     }
@@ -649,7 +653,7 @@ class AdbLoopbackServer(
         return addresses
             .distinct()
             .joinToString(separator = " · ") { "$it:$port" }
-            .ifBlank { "Connect both devices to the same private network, then refresh." }
+            .ifBlank { "두 기기를 같은 개인 네트워크에 연결한 뒤 새로고침하세요." }
     }
 
     private fun buildEnvelope(
@@ -667,5 +671,15 @@ class AdbLoopbackServer(
             deviceName = deviceName,
             payload = payload
         )
+    }
+
+    private fun kindLabel(kind: String): String {
+        return when (kind.lowercase()) {
+            "url" -> "URL"
+            "image" -> "이미지"
+            "video" -> "영상"
+            "file" -> "파일"
+            else -> "텍스트"
+        }
     }
 }

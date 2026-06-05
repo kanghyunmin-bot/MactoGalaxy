@@ -17,9 +17,9 @@ data class TrustedPeerRecord(
 
 data class PairingUiState(
     val enteredCode: String = "1408",
-    val statusText: String = "Enter the same 4-digit code on both devices",
+    val statusText: String = "양쪽 기기에 같은 4자리 코드를 입력하세요",
     val trustedPeerCount: Int = 0,
-    val lastTrustedPeerName: String = "No trusted peer"
+    val lastTrustedPeerName: String = "저장된 기기 없음"
 ) {
     val isCodeComplete: Boolean
         get() = enteredCode.length == 4
@@ -41,12 +41,12 @@ object PairingStore {
         _state.value = PairingUiState(
             enteredCode = prefs.getString(keyEnteredCode, "1408").orEmpty().ifBlank { "1408" },
             statusText = if (peers.isEmpty()) {
-                "Enter the same 4-digit code on both devices"
+                "양쪽 기기에 같은 4자리 코드를 입력하세요"
             } else {
-                "Trusted reconnect available"
+                "저장된 기기와 다시 연결할 수 있습니다"
             },
             trustedPeerCount = peers.size,
-            lastTrustedPeerName = peers.maxByOrNull { it.lastSeenAtEpochMs }?.deviceName ?: "No trusted peer"
+            lastTrustedPeerName = peers.maxByOrNull { it.lastSeenAtEpochMs }?.deviceName ?: "저장된 기기 없음"
         )
     }
 
@@ -57,9 +57,9 @@ object PairingStore {
             it.copy(
                 enteredCode = normalized,
                 statusText = if (normalized.length == 4) {
-                    "Code saved locally. Pair from the Mac app when connected."
+                    "코드를 저장했습니다. 연결 후 Mac 앱에서 페어링을 저장하세요."
                 } else {
-                    "Enter all 4 digits on both devices"
+                    "4자리 코드를 모두 입력하세요"
                 }
             )
         }
@@ -102,7 +102,7 @@ object PairingStore {
         saveTrustedPeers(peers)
         _state.update {
             it.copy(
-                statusText = "Trusted device stored for $deviceName",
+                statusText = "$deviceName 신뢰 기기를 저장했습니다",
                 trustedPeerCount = peers.size,
                 lastTrustedPeerName = deviceName
             )
@@ -113,9 +113,9 @@ object PairingStore {
         _state.update {
             it.copy(
                 statusText = if (trusted) {
-                    "Trusted reconnect active with $deviceName"
+                    "$deviceName 신뢰 연결 활성화됨"
                 } else {
-                    "Connected peer requires 4-digit pairing"
+                    "연결된 Mac은 4자리 페어링이 필요합니다"
                 },
                 lastTrustedPeerName = if (trusted) deviceName else it.lastTrustedPeerName
             )

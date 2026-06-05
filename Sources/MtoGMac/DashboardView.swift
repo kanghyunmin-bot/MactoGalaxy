@@ -11,15 +11,17 @@ struct DashboardView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     HeaderView(model: model)
-                    MirrorPanel(model: model)
-                    ExternalDisplayPanel(model: model)
+                    ConnectionPanel(model: model)
 
                     HStack(alignment: .top, spacing: 18) {
-                        ConnectionPanel(model: model)
+                        MirrorPanel(model: model)
                         ClipboardPanel(model: model)
                     }
 
-                    DetailsPanel(model: model)
+                    HStack(alignment: .top, spacing: 18) {
+                        ExternalDisplayPanel(model: model)
+                        DetailsPanel(model: model)
+                    }
                 }
                 .padding(28)
             }
@@ -62,19 +64,27 @@ private struct HeaderView: View {
                 Text("MtoG")
                     .font(.system(size: 48, weight: .black, design: .rounded))
                     .foregroundStyle(AppTheme.ink)
-                Text("High-quality USB mirror and manual clipboard for Galaxy Tab.")
+                Text("갤럭시 탭을 Wi-Fi 또는 USB로 연결하고, 미러링과 클립보드를 함께 사용합니다.")
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppTheme.muted)
             }
 
             Spacer()
 
-            StatusCapsule(
-                title: model.isMirrorRunning ? "Mirror Running" : "Mirror Idle",
-                detail: model.mirrorStatusText,
-                systemImage: "rectangle.connected.to.line.below",
-                tint: model.isMirrorRunning ? AppTheme.success : AppTheme.accent
-            )
+            VStack(alignment: .trailing, spacing: 10) {
+                StatusCapsule(
+                    title: model.connectionStatus.rawValue,
+                    detail: model.sessionClient.activeTransportDescription,
+                    systemImage: "point.3.connected.trianglepath.dotted",
+                    tint: model.connectionStatus == .trusted || model.connectionStatus == .active ? AppTheme.success : AppTheme.accent
+                )
+                StatusCapsule(
+                    title: model.isMirrorRunning ? "미러링 실행 중" : "미러링 대기 중",
+                    detail: model.mirrorStatusText,
+                    systemImage: "rectangle.connected.to.line.below",
+                    tint: model.isMirrorRunning ? AppTheme.success : AppTheme.accentWarm
+                )
+            }
         }
         .surfaceCard(padding: 24)
     }
@@ -85,22 +95,18 @@ private struct MirrorPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SectionTitle(
-                "Galaxy Mirror",
-                subtitle: "USB scrcpy window-local control",
-                systemImage: "display"
-            )
+            SectionTitle("갤럭시 미러링", subtitle: "창 안에서만 조작", systemImage: "display")
 
             HStack(alignment: .center, spacing: 18) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(model.isMirrorRunning ? "Mirror window is active" : "Start the Galaxy mirror window")
+                    Text(model.isMirrorRunning ? "갤럭시 화면이 열려 있습니다" : "갤럭시 화면을 Mac에 띄우기")
                         .font(.system(size: 28, weight: .black, design: .rounded))
                         .foregroundStyle(AppTheme.ink)
                     Text(model.mirrorStatusText)
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundStyle(AppTheme.muted)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("Control stays inside the scrcpy window. Move the Mac pointer outside the mirror window to return to macOS immediately.")
+                    Text("마우스가 미러링 창 안에 있을 때만 갤럭시를 조작합니다. 창 밖으로 나오면 바로 Mac 조작으로 돌아옵니다.")
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(AppTheme.muted)
                 }
@@ -108,7 +114,7 @@ private struct MirrorPanel: View {
                 Spacer()
 
                 VStack(spacing: 10) {
-                    Button(model.isMirrorRunning ? "Stop Mirror" : "Start USB Mirror") {
+                    Button(model.isMirrorRunning ? "미러링 종료" : "USB 미러링 시작") {
                         if model.isMirrorRunning {
                             model.stopMirrorMode()
                         } else {
@@ -117,7 +123,7 @@ private struct MirrorPanel: View {
                     }
                     .buttonStyle(PrimaryActionButtonStyle(tint: model.isMirrorRunning ? AppTheme.accentWarm : AppTheme.accent))
 
-                    Button("Reconnect ADB Session") {
+                    Button("USB 세션 다시 연결") {
                         Task { await model.connectADBSession() }
                     }
                     .buttonStyle(SecondaryActionButtonStyle())
@@ -134,19 +140,15 @@ private struct ExternalDisplayPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SectionTitle(
-                "External Display",
-                subtitle: "Experimental virtual second-screen mode",
-                systemImage: "rectangle.inset.filled.and.person.filled"
-            )
+            SectionTitle("외장 디스플레이", subtitle: "실험적 보조 화면", systemImage: "rectangle.inset.filled.and.person.filled")
 
             HStack(alignment: .center, spacing: 18) {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Use this only when you need the Galaxy Tab as a separate Mac display.")
+                    Text("갤럭시 탭을 Mac의 별도 화면처럼 써야 할 때만 사용하세요.")
                         .font(.system(size: 22, weight: .black, design: .rounded))
                         .foregroundStyle(AppTheme.ink)
 
-                    Text("Experimental: this uses a private macOS virtual display API and JPEG-over-ADB streaming. It can glitch, leave display state behind, or perform poorly. Mirror is the stable control mode.")
+                    Text("실험 기능입니다. macOS 가상 디스플레이와 ADB 스트리밍을 사용하므로 화면 오류, 잔여 디스플레이 상태, 성능 저하가 생길 수 있습니다. 안정적인 사용은 미러링을 권장합니다.")
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundStyle(AppTheme.danger)
                         .fixedSize(horizontal: false, vertical: true)
@@ -156,7 +158,7 @@ private struct ExternalDisplayPanel: View {
                         .foregroundStyle(AppTheme.muted)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Toggle("Enable experimental external display", isOn: $model.allowExperimentalExternalDisplay)
+                    Toggle("실험적 외장 디스플레이 허용", isOn: $model.allowExperimentalExternalDisplay)
                         .font(.system(size: 13, weight: .bold, design: .rounded))
                         .foregroundStyle(AppTheme.ink)
                 }
@@ -165,14 +167,14 @@ private struct ExternalDisplayPanel: View {
 
                 VStack(spacing: 10) {
                     StatusCapsule(
-                        title: model.isExternalDisplayRunning ? "Display Running" : "Display Idle",
-                        detail: model.allowExperimentalExternalDisplay ? "Experimental enabled" : "Enable toggle first",
+                        title: model.isExternalDisplayRunning ? "디스플레이 실행 중" : "디스플레이 대기 중",
+                        detail: model.allowExperimentalExternalDisplay ? "실험 기능 허용됨" : "먼저 허용 스위치를 켜세요",
                         systemImage: "display.2",
                         tint: model.isExternalDisplayRunning ? AppTheme.success : AppTheme.accentWarm
                     )
                     .frame(width: 260)
 
-                    Button(model.isExternalDisplayRunning ? "Stop External Display" : "Start External Display") {
+                    Button(model.isExternalDisplayRunning ? "외장 디스플레이 종료" : "외장 디스플레이 시작") {
                         if model.isExternalDisplayRunning {
                             model.stopExternalDisplayMode()
                         } else {
@@ -182,7 +184,7 @@ private struct ExternalDisplayPanel: View {
                     .buttonStyle(PrimaryActionButtonStyle(tint: model.isExternalDisplayRunning ? AppTheme.accentWarm : AppTheme.success))
                     .disabled(!model.allowExperimentalExternalDisplay)
 
-                    Button("Force Stop") {
+                    Button("강제 종료") {
                         model.stopExternalDisplayMode()
                     }
                     .buttonStyle(SecondaryActionButtonStyle())
@@ -199,41 +201,126 @@ private struct ConnectionPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SectionTitle("Connection", subtitle: "Trust and ADB session", systemImage: "lock.shield")
+            SectionTitle("연결 허브", subtitle: "페어링, USB, 개인 Wi-Fi", systemImage: "lock.shield")
 
-            VStack(spacing: 10) {
-                InfoRow("ADB", value: model.adbStateText)
-                InfoRow("Trust", value: model.trustState.lastPairedDescription)
-                InfoRow("Last seen", value: model.trustState.lastSeenDescription)
+            HStack(alignment: .top, spacing: 12) {
+                VStack(spacing: 10) {
+                    InfoRow("상태", value: model.adbStateText)
+                    InfoRow("신뢰", value: model.trustState.lastPairedDescription)
+                    InfoRow("최근 연결", value: model.trustState.lastSeenDescription)
+                }
+                .frame(maxWidth: .infinity)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("페어링 코드")
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .foregroundStyle(AppTheme.ink)
+                    HStack(spacing: 8) {
+                        ForEach(Array(model.pairingCode.enumerated()), id: \.offset) { _, digit in
+                            Text(digit.isEmpty ? "-" : digit)
+                                .font(.system(size: 26, weight: .black, design: .rounded))
+                                .foregroundStyle(AppTheme.accent)
+                                .frame(width: 54, height: 58)
+                                .background(AppTheme.panelStrong, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        }
+                    }
+                    Text(model.pairingStatusText)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(AppTheme.panelStrong, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
 
-            HStack(spacing: 8) {
-                ForEach(Array(model.pairingCode.enumerated()), id: \.offset) { _, digit in
-                    Text(digit.isEmpty ? "-" : digit)
-                        .font(.system(size: 26, weight: .black, design: .rounded))
-                        .foregroundStyle(AppTheme.accent)
-                        .frame(width: 54, height: 58)
-                        .background(AppTheme.panelStrong, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            VStack(alignment: .leading, spacing: 10) {
+                Text("무선 연결")
+                    .font(.system(size: 13, weight: .black, design: .rounded))
+                    .foregroundStyle(AppTheme.ink)
+                Text("개인 Wi-Fi, 개인 핫스팟, 신뢰할 수 있는 LAN을 사용하세요. 학교/공용 네트워크는 기기 검색이나 직접 연결을 막을 수 있습니다.")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(model.wirelessDiscoveryStatus)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppTheme.accentWarm)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 8) {
+                    TextField("갤럭시 IP 직접 입력", text: $model.wirelessHost)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+
+                    Button("IP로 연결") {
+                        Task { await model.connectWirelessSession() }
+                    }
+                    .buttonStyle(SecondaryActionButtonStyle())
+                }
+
+                HStack(spacing: 8) {
+                    Button("Wi-Fi 검색") {
+                        model.startWirelessDiscovery()
+                    }
+                    .buttonStyle(PrimaryActionButtonStyle(tint: AppTheme.success))
+
+                    Button("찾은 기기 연결") {
+                        Task { await model.connectFirstDiscoveredWirelessPeer() }
+                    }
+                    .buttonStyle(SecondaryActionButtonStyle())
+                    .disabled(model.discoveredWirelessPeers.isEmpty)
+
+                    Button("검색 중지") {
+                        model.stopWirelessDiscovery()
+                    }
+                    .buttonStyle(SecondaryActionButtonStyle())
+                }
+
+                if !model.discoveredWirelessPeers.isEmpty {
+                    VStack(spacing: 7) {
+                        ForEach(model.discoveredWirelessPeers) { peer in
+                            Button {
+                                Task { await model.connectDiscoveredWirelessPeer(peer) }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "wifi")
+                                        .foregroundStyle(AppTheme.success)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(peer.name)
+                                            .font(.system(size: 12, weight: .black, design: .rounded))
+                                            .foregroundStyle(AppTheme.ink)
+                                        Text(peer.detail)
+                                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                                            .foregroundStyle(AppTheme.muted)
+                                    }
+                                    Spacer()
+                                    Text("연결")
+                                        .font(.system(size: 11, weight: .black, design: .rounded))
+                                        .foregroundStyle(AppTheme.accent)
+                                }
+                                .padding(10)
+                                .background(Color.white.opacity(0.68), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
             }
-
-            Text(model.pairingStatusText)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundStyle(AppTheme.muted)
-                .fixedSize(horizontal: false, vertical: true)
+            .padding(12)
+            .background(AppTheme.panelStrong, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
 
             HStack(spacing: 10) {
-                Button("Connect USB") {
+                Button("USB 연결") {
                     Task { await model.connectADBSession() }
                 }
                 .buttonStyle(PrimaryActionButtonStyle(tint: AppTheme.accent))
 
-                Button("Pair & Trust") {
+                Button("페어링 저장") {
                     model.startPairing()
                 }
                 .buttonStyle(SecondaryActionButtonStyle())
 
-                Button("Disconnect") {
+                Button("연결 해제") {
                     model.sessionClient.disconnect()
                 }
                 .buttonStyle(SecondaryActionButtonStyle())
@@ -250,9 +337,9 @@ private struct ClipboardPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                SectionTitle("Clipboard", subtitle: "Manual sync only", systemImage: "clipboard")
+                SectionTitle("클립보드", subtitle: "버튼으로 직접 동기화", systemImage: "clipboard")
                 Spacer()
-                Button(model.isClipboardHistoryVisible ? "Hide History" : "Show History") {
+                Button(model.isClipboardHistoryVisible ? "히스토리 숨기기" : "히스토리 보기") {
                     model.toggleClipboardHistory()
                 }
                 .buttonStyle(SecondaryActionButtonStyle())
@@ -264,12 +351,12 @@ private struct ClipboardPanel: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 10) {
-                Button("Push Mac Clipboard") {
+                Button("Mac 클립보드 보내기") {
                     model.pushCurrentClipboardToAndroid()
                 }
                 .buttonStyle(PrimaryActionButtonStyle(tint: AppTheme.accent))
 
-                Button("Pull Galaxy Clipboard") {
+                Button("갤럭시 클립보드 가져오기") {
                     model.requestAndroidClipboardPull()
                 }
                 .buttonStyle(SecondaryActionButtonStyle())
@@ -303,23 +390,24 @@ private struct DetailsPanel: View {
         DisclosureGroup {
             VStack(spacing: 10) {
                 InfoRow("Mac", value: model.deviceName)
-                InfoRow("Target", value: model.targetName)
-                InfoRow("Transport", value: model.sessionClient.activeTransportDescription)
-                InfoRow("Health", value: model.sessionClient.healthText)
-                InfoRow("Control", value: model.controlStatusText)
-                InfoRow("Corner mode", value: model.edgeInstructionText)
+                InfoRow("갤럭시", value: model.targetName)
+                InfoRow("연결 방식", value: model.sessionClient.activeTransportDescription)
+                InfoRow("상태 확인", value: model.sessionClient.healthText)
+                InfoRow("조작", value: model.controlStatusText)
+                InfoRow("전환 위치", value: model.edgeInstructionText)
                 if let last = model.sessionClient.lastReceivedMessage {
-                    InfoRow("Last inbound", value: "\(last.type.rawValue) from \(last.deviceName)")
+                    InfoRow("최근 수신", value: "\(last.type.rawValue) · \(last.deviceName)")
                 }
                 if let error = model.sessionClient.lastErrorMessage {
-                    InfoRow("Last error", value: error)
+                    InfoRow("최근 오류", value: error)
                 }
             }
             .padding(.top, 12)
         } label: {
-            SectionTitle("Details", subtitle: "Diagnostics, not primary controls", systemImage: "stethoscope")
+            SectionTitle("자세히", subtitle: "연결 진단 정보", systemImage: "stethoscope")
         }
         .surfaceCard(padding: 20)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
 
@@ -414,10 +502,10 @@ private struct EmptyHistoryView: View {
             Image(systemName: "doc.on.clipboard")
                 .font(.system(size: 26, weight: .bold))
                 .foregroundStyle(AppTheme.accent)
-            Text("No clipboard history yet")
+            Text("아직 클립보드 기록이 없습니다")
                 .font(.system(size: 13, weight: .black, design: .rounded))
                 .foregroundStyle(AppTheme.ink)
-            Text("Sync a text, image, or file item first.")
+            Text("텍스트, 이미지, 파일을 한 번 동기화하면 여기에 표시됩니다.")
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(AppTheme.muted)
         }
@@ -450,10 +538,10 @@ private struct HistoryRow: View {
             Spacer()
 
             HStack(spacing: 6) {
-                Button("Re-copy", action: onRecopy)
+                Button("다시 복사", action: onRecopy)
                     .buttonStyle(CompactActionButtonStyle())
                     .disabled(!item.canReCopy)
-                Button("Download", action: onDownload)
+                Button("저장", action: onDownload)
                     .buttonStyle(CompactActionButtonStyle())
                     .disabled(!item.canDownload)
             }

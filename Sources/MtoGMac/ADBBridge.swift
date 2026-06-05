@@ -10,11 +10,11 @@ enum ADBBridgeError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .adbNotFound:
-            return "adb binary not found. Install Android platform-tools or provide an adb path."
+            return "adb를 찾을 수 없습니다. Android platform-tools를 설치하거나 adb 경로를 지정하세요."
         case .commandFailed(let reason):
-            return "adb command failed: \(reason)"
+            return "adb 명령이 실패했습니다: \(reason)"
         case .invalidOutput(let output):
-            return "Unexpected adb output: \(output)"
+            return "예상하지 못한 adb 응답입니다: \(output)"
         }
     }
 }
@@ -55,7 +55,7 @@ final class ADBBridge: @unchecked Sendable {
             .filter { $0.contains("\tdevice") }
 
         guard !lines.isEmpty else {
-            throw ADBBridgeError.invalidOutput("No authorized Android device found in adb devices output.")
+            throw ADBBridgeError.invalidOutput("허용된 Android 기기를 찾지 못했습니다. USB 디버깅 허용 팝업을 확인하세요.")
         }
     }
 
@@ -152,7 +152,7 @@ final class ADBBridge: @unchecked Sendable {
             }
         }
 
-        throw ADBBridgeError.invalidOutput("No Galaxy Wi-Fi IPv4 address found. Connect the tablet to Wi-Fi and retry.")
+        throw ADBBridgeError.invalidOutput("갤럭시의 Wi-Fi IPv4 주소를 찾지 못했습니다. 태블릿을 개인 Wi-Fi에 연결한 뒤 다시 시도하세요.")
     }
 
     private func resolveADBPath() throws -> String {
@@ -287,7 +287,7 @@ final class ADBBridge: @unchecked Sendable {
         } while Date() < deadline
 
         throw ADBBridgeError.commandFailed(
-            "Android companion listener is not reachable on localhost:\(configuration.hostPort). Open MtoG on the tablet and retry."
+            "갤럭시 앱 수신 포트(localhost:\(configuration.hostPort))에 연결하지 못했습니다. 태블릿에서 MtoG를 열고 다시 시도하세요."
         )
     }
 

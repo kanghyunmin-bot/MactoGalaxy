@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.update
 
 data class AccessibilityRuntimeState(
     val isEnabled: Boolean = false,
-    val statusText: String = "Accessibility not enabled",
+    val statusText: String = "접근성 서비스가 꺼져 있습니다",
     val canPerformGestures: Boolean = false
 )
 
@@ -43,7 +43,7 @@ object ControlServiceRuntime {
         if (!enabled || !serviceListed) {
             _state.value = AccessibilityRuntimeState(
                 isEnabled = false,
-                statusText = "Accessibility off: remote cursor and gestures are unavailable",
+                statusText = "접근성 꺼짐: 원격 커서와 제스처를 사용할 수 없습니다",
                 canPerformGestures = false
             )
         }
@@ -53,7 +53,7 @@ object ControlServiceRuntime {
         _state.update {
             it.copy(
                 isEnabled = true,
-                statusText = "Accessibility connected",
+                statusText = "접근성 서비스 연결됨",
                 canPerformGestures = canPerformGestures
             )
         }

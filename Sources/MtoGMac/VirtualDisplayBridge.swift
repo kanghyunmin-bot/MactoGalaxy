@@ -14,13 +14,13 @@ final class VirtualDisplayBridge: @unchecked Sendable {
         queue.async { [weak self] in
             guard let self else { return }
             if self.process?.isRunning == true {
-                self.reportStatus("External display helper is already running")
+                self.reportStatus("외장 디스플레이 도우미가 이미 실행 중입니다")
                 self.reportState(true)
                 return
             }
 
             guard let helperURL = self.resolveHelperURL() else {
-                self.reportStatus("External display failed: helper executable is missing")
+                self.reportStatus("외장 디스플레이 시작 실패: 도우미 실행 파일이 없습니다")
                 self.reportState(false)
                 return
             }
@@ -53,11 +53,11 @@ final class VirtualDisplayBridge: @unchecked Sendable {
                 self.outputPipe = stdout
                 self.errorPipe = stderr
                 self.reportState(true)
-                self.reportStatus("External display helper started")
+                self.reportStatus("외장 디스플레이 도우미 시작됨")
             } catch {
                 self.cleanupPipeHandlers()
                 self.reportState(false)
-                self.reportStatus("External display failed: \(error.localizedDescription)")
+                self.reportStatus("외장 디스플레이 시작 실패: \(error.localizedDescription)")
             }
         }
     }
@@ -82,9 +82,9 @@ final class VirtualDisplayBridge: @unchecked Sendable {
         reportState(false)
 
         if terminatedProcess.terminationStatus == 0 {
-            reportStatus("External display stopped")
+            reportStatus("외장 디스플레이가 종료되었습니다")
         } else {
-            reportStatus("External display helper exited with code \(terminatedProcess.terminationStatus)")
+            reportStatus("외장 디스플레이 도우미가 종료되었습니다. 종료 코드: \(terminatedProcess.terminationStatus)")
         }
     }
 
@@ -100,7 +100,7 @@ final class VirtualDisplayBridge: @unchecked Sendable {
             }
         }
 
-        reportStatus("External display stopped")
+        reportStatus("외장 디스플레이가 종료되었습니다")
         reportState(false)
     }
 
@@ -116,7 +116,7 @@ final class VirtualDisplayBridge: @unchecked Sendable {
             } else if let input = line.stripPrefix("input:") {
                 inputHandler?(input)
             } else if isError {
-                reportStatus("External display error: \(line)")
+                reportStatus("외장 디스플레이 오류: \(line)")
             }
         }
     }

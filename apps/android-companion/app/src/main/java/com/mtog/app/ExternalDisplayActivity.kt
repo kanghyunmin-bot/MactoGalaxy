@@ -325,30 +325,30 @@ class ExternalDisplayActivity : ComponentActivity() {
         onFrame: suspend (Bitmap) -> Unit
     ) = withContext(Dispatchers.IO) {
         try {
-            reportStatus("Waiting for Mac external display stream on USB", onStatus)
+            reportStatus("USB로 Mac 확장 화면 스트림을 기다리는 중", onStatus)
             serverSocket = ServerSocket(port, 1, InetAddress.getByName("127.0.0.1"))
             clientSocket = serverSocket?.accept()
             val socket = clientSocket ?: return@withContext
             socket.tcpNoDelay = true
-            reportStatus("Mac stream connected", onStatus)
+            reportStatus("Mac 화면 스트림 연결됨", onStatus)
 
             val input = BufferedInputStream(socket.getInputStream())
             val greeting = input.readExact(8)
             if (String(greeting) != "MTOGVD1\n") {
-                reportStatus("Invalid external display stream", onStatus)
+                reportStatus("외장 화면 스트림 형식이 올바르지 않습니다", onStatus)
                 return@withContext
             }
 
             while (isActive) {
                 val magic = input.readExact(4)
                 if (String(magic) != "FRAM") {
-                    reportStatus("External display stream lost", onStatus)
+                    reportStatus("외장 화면 스트림 연결이 끊겼습니다", onStatus)
                     return@withContext
                 }
 
                 val length = ByteBuffer.wrap(input.readExact(4)).int
                 if (length <= 0 || length > 8 * 1024 * 1024) {
-                    reportStatus("External display frame rejected", onStatus)
+                    reportStatus("외장 화면 프레임을 거절했습니다", onStatus)
                     return@withContext
                 }
 
@@ -363,7 +363,7 @@ class ExternalDisplayActivity : ComponentActivity() {
                 }
             }
         } catch (error: Throwable) {
-            reportStatus("External display stopped: ${error.message ?: error.javaClass.simpleName}", onStatus)
+            reportStatus("외장 화면이 중지되었습니다: ${error.message ?: error.javaClass.simpleName}", onStatus)
         } finally {
             clientSocket?.close()
             clientSocket = null
@@ -387,7 +387,7 @@ class ExternalDisplayActivity : ComponentActivity() {
         while (offset < size) {
             val read = read(output, offset, size - offset)
             if (read < 0) {
-                throw IllegalStateException("socket closed")
+                throw IllegalStateException("소켓이 닫혔습니다")
             }
             offset += read
         }
@@ -404,7 +404,7 @@ private fun ExternalDisplayScreen(
         suspend (Bitmap) -> Unit
     ) -> Unit
 ) {
-    var status by remember { mutableStateOf("Preparing Galaxy external display") }
+    var status by remember { mutableStateOf("갤럭시 외장 화면 준비 중") }
     var frame by remember { mutableStateOf<Bitmap?>(null) }
 
     LaunchedEffect(port) {
@@ -425,7 +425,7 @@ private fun ExternalDisplayScreen(
         if (bitmap != null) {
             Image(
                 bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Mac external display",
+                contentDescription = "Mac 외장 화면",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit
             )
@@ -437,7 +437,7 @@ private fun ExternalDisplayScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "MtoG External Display",
+                    text = "MtoG 외장 화면",
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Black

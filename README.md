@@ -1,21 +1,21 @@
 # MtoG
 
-MtoG lets a Mac control, mirror, and share clipboard content with a Galaxy Tab over USB-C.
+MtoG는 Mac과 Galaxy Tab을 연결해 갤럭시 화면 미러링, 클립보드 공유, 실험적 외장 디스플레이 기능을 제공하는 Mac-to-Galaxy 도구입니다.
 
-## Install
+## 설치 파일
 
-Download both files from the latest GitHub release.
+최신 설치 파일은 GitHub Release에서 받을 수 있습니다. Mac에는 DMG를, Galaxy Tab에는 APK를 설치하세요.
 
 <table>
   <tr>
     <td align="center" width="50%">
       <h1>💻</h1>
-      <h2>Mac</h2>
+      <h2>MacBook</h2>
       <p><strong>MtoG-macos.dmg</strong></p>
-      <p>Install this on your MacBook.</p>
+      <p>Mac 앱 설치 파일입니다.</p>
       <p>
         <a href="https://github.com/kanghyunmin-bot/MactoGalaxy/releases/latest/download/MtoG-macos.dmg">
-          <strong>Download DMG</strong>
+          <strong>DMG 다운로드</strong>
         </a>
       </p>
     </td>
@@ -23,130 +23,153 @@ Download both files from the latest GitHub release.
       <h1>📱</h1>
       <h2>Galaxy Tab</h2>
       <p><strong>MtoG-android-debug.apk</strong></p>
-      <p>Install this on your Galaxy Tab.</p>
+      <p>Galaxy Tab 앱 설치 파일입니다.</p>
       <p>
         <a href="https://github.com/kanghyunmin-bot/MactoGalaxy/releases/latest/download/MtoG-android-debug.apk">
-          <strong>Download APK</strong>
+          <strong>APK 다운로드</strong>
         </a>
       </p>
     </td>
   </tr>
 </table>
 
-## Quick Start
+## 빠른 시작
 
-1. Install `MtoG-macos.dmg` on the Mac.
-2. Install `MtoG-android-debug.apk` on the Galaxy Tab.
-3. Connect the Mac and Galaxy Tab with a USB-C to USB-C cable.
-4. Enable Android USB debugging when prompted.
-5. Open `MtoG` on both devices.
-6. On macOS, allow the required permissions:
-   - Accessibility
-   - Screen Recording
-   - Input Monitoring, if requested
-7. In the Mac app, use `Connect USB`, then start the mode you need:
-   - `Start USB Mirror` for stable Galaxy screen control in a Mac window.
-   - `Start External Display` to use the Galaxy Tab as an experimental Mac second screen.
+1. Mac에서 `MtoG-macos.dmg`를 열고 `MtoG.app`을 Applications 폴더로 옮깁니다.
+2. Galaxy Tab에서 `MtoG-android-debug.apk`를 설치합니다.
+3. Mac과 Galaxy Tab을 USB-C to USB-C 케이블로 연결합니다.
+4. Galaxy Tab에서 USB 디버깅 허용 팝업이 뜨면 허용합니다.
+5. 양쪽 기기에서 `MtoG`를 실행합니다.
+6. Mac 앱에서 `USB 연결`을 누릅니다.
+7. 양쪽 앱에 같은 4자리 코드를 입력하고 페어링을 저장합니다.
 
-## Controls
+## Mac 권한
 
-### Mirror Mode
+macOS에서 아래 권한을 허용해야 미러링/클릭/입력 전달이 정상 동작합니다.
 
-Use this when you want the Galaxy Tab screen shown on the Mac and controlled from the Mac.
+- `손쉬운 사용`: 클릭, 키보드 입력, 외장 디스플레이 터치 입력에 필요합니다.
+- `화면 기록`: 미러링 또는 외장 디스플레이 화면 캡처에 필요할 수 있습니다.
+- `입력 모니터링`: 키보드/트랙패드 입력을 읽어 Android로 전달할 때 필요할 수 있습니다.
+- `로컬 네트워크`: 개인 Wi-Fi에서 Galaxy Tab을 자동 검색할 때 필요합니다.
+- `키체인`: 페어링 장기 신뢰 키를 저장할 때 필요합니다. 확인창이 뜨면 Mac 로그인 비밀번호 입력 후 `항상 허용`을 누르세요.
 
-- Move the Mac pointer inside the mirror window to control the Galaxy Tab.
-- Move the pointer outside the mirror window to return to macOS.
-- `Esc` or `Command + Q` exits control mode.
+## Galaxy Tab 권한
 
-### External Display Mode
+Galaxy Tab에서는 아래 설정이 필요할 수 있습니다.
 
-Use this when you want the Galaxy Tab to act like a separate Mac display.
+- `USB 디버깅`: 현재 USB MVP 연결과 미러링에 필요합니다.
+- `알림 허용`: 백그라운드 연결 상태와 수동 클립보드 동기화 버튼에 필요합니다.
+- `MtoG 접근성 서비스`: 일부 제스처/커서 보조 기능에 필요합니다.
+- `MtoG 키보드`: 한글/유니코드 원격 입력 안정성을 높일 때 사용합니다.
 
-- Touch once on the Galaxy Tab: move the Mac cursor.
-- Tap twice: left click.
-- Press for 1 second: right click.
-- Drag: drag on the Mac external display.
-- Two-finger move: scroll.
+## 주요 기능
 
-This mode is experimental. It uses a virtual macOS display and streams frames to Android over ADB.
+### 미러링 모드
 
-## Clipboard
+갤럭시 화면을 Mac 창에 띄우고, 미러링 창 안에서만 Galaxy Tab을 조작합니다.
 
-Clipboard sync is currently manual.
+- 포인터가 미러링 창 안에 있으면 Galaxy Tab을 조작합니다.
+- 포인터가 창 밖으로 나오면 바로 macOS 조작으로 돌아옵니다.
+- `Esc` 또는 `Command + Q`로 제어 모드에서 빠져나올 수 있습니다.
 
-- `Push Mac Clipboard`: send the current Mac clipboard to the Galaxy Tab.
-- `Pull Galaxy Clipboard`: bring the current Galaxy Tab clipboard to the Mac.
-- `Show History`: view compact clipboard history.
+### 클립보드
 
-Text is the most reliable. Image and file clipboard behavior depends on Android clipboard and content-provider restrictions.
+현재 클립보드 동기화는 안정성을 위해 수동 버튼 방식입니다.
 
-## Requirements
+- `Mac 클립보드 보내기`: 현재 Mac 클립보드를 Galaxy Tab으로 보냅니다.
+- `갤럭시 클립보드 가져오기`: 현재 Galaxy Tab 클립보드를 Mac으로 가져옵니다.
+- `히스토리 보기`: 최근 클립보드 기록을 보고 다시 복사하거나 저장합니다.
+
+텍스트가 가장 안정적입니다. 이미지와 파일은 Android 클립보드/ContentProvider 권한 정책에 따라 앱별 호환성이 달라질 수 있습니다.
+
+### 외장 디스플레이 모드
+
+Galaxy Tab을 실험적 Mac 보조 화면처럼 사용할 때만 켭니다.
+
+- 한 번 터치: Mac 커서 이동
+- 두 번 탭: 왼쪽 클릭
+- 1초 이상 길게 누르기: 오른쪽 클릭
+- 드래그: Mac 외장 화면에서 드래그
+- 두 손가락 이동: 스크롤
+
+이 모드는 실험 기능입니다. macOS 가상 디스플레이와 ADB 스트리밍을 사용하므로 화면 오류, 성능 저하, 재시작이 필요할 수 있습니다.
+
+## 문제 해결
+
+- Mac 앱이 키체인 비밀번호를 묻는 경우: Mac 로그인 비밀번호를 입력하고 `항상 허용`을 누르세요.
+- Galaxy Tab이 안 보이는 경우: USB-C 케이블을 다시 연결하고 Android USB 디버깅 허용을 다시 확인하세요.
+- Wi-Fi 검색이 안 되는 경우: 두 기기를 같은 개인 Wi-Fi 또는 개인 핫스팟에 연결하고 Mac 앱에서 IP 직접 연결을 사용하세요.
+- 클릭이 안 되는 경우: macOS `시스템 설정 > 개인정보 보호 및 보안 > 손쉬운 사용`에서 `MtoG`를 다시 허용하세요.
+- APK 설치가 막히는 경우: Galaxy Tab에서 해당 브라우저/파일 앱의 `알 수 없는 앱 설치` 권한을 허용하세요.
+
+## 필요 조건
 
 ### Mac
 
-- Apple Silicon Mac or Intel Mac
-- macOS with Accessibility and Screen Recording permissions available
+- Apple Silicon Mac 또는 Intel Mac
+- macOS 14 이상 권장
 - Android platform-tools / `adb`
+- `scrcpy` 설치 권장: `brew install scrcpy`
 
 ### Galaxy Tab
 
-- Galaxy Tab S11 / S11 Ultra target device
-- Android with USB debugging enabled
-- MtoG APK installed
+- Galaxy Tab S11 / S11 Ultra 대상
+- Android USB 디버깅 활성화
+- MtoG APK 설치
 
-## Important Notes
+## 중요 안내
 
-- This is not Sidecar.
-- This is not Apple Universal Control.
-- This is not a production-signed release yet.
-- USB-C is the physical cable. Current MVP communication uses ADB over USB.
-- External Display Mode is experimental and may need restart if the virtual display gets stuck.
-- If clicks do not work, re-enable `MtoG` in macOS `System Settings > Privacy & Security > Accessibility`.
+- Sidecar가 아닙니다.
+- Apple Universal Control이 아닙니다.
+- 아직 제품 서명/공증된 릴리스가 아닙니다.
+- USB-C는 물리 케이블입니다. 현재 MVP 통신은 USB 위의 ADB를 사용합니다.
+- 외장 디스플레이 모드는 실험 기능이며 안정적인 사용은 미러링 모드를 권장합니다.
+- Android 클립보드 정책 때문에 모든 앱의 이미지/파일 클립보드를 100% 보장할 수 없습니다.
 
-## Build From Source
+## 소스에서 빌드
 
-### macOS app
+### macOS 앱
 
 ```bash
 swift build
 ./scripts/package-macos-dmg.sh
 ```
 
-Output:
+결과물:
 
 ```text
 dist/MtoG.app
 dist/MtoG-macos.dmg
 ```
 
-### Android app
+### Android 앱
 
 ```bash
 cd apps/android-companion
 ./gradlew :app:assembleDebug
 ```
 
-Output:
+결과물:
 
 ```text
 apps/android-companion/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Source Layout
+## 소스 구조
 
 ```text
 .
 ├── Package.swift
 ├── Sources/
-│   ├── MtoGMac/                    # macOS app
-│   └── MtoGExternalDisplayWorker/  # external-display streaming helper
+│   ├── MtoGMac/                    # macOS 앱
+│   └── MtoGExternalDisplayWorker/  # 외장 디스플레이 스트리밍 도우미
 ├── apps/
-│   └── android-companion/          # Galaxy Tab APK project
+│   └── android-companion/          # Galaxy Tab APK 프로젝트
 ├── scripts/
 │   ├── package-macos-dmg.sh
 │   └── build-aoa-hid-probe.sh
 └── tools/
-    └── aoa-hid-probe/              # optional Android Open Accessory HID helper
+    └── aoa-hid-probe/              # 선택형 Android Open Accessory HID 도우미
 ```
 
-The repository intentionally keeps only the files needed to build and package the macOS app, Android APK, and optional HID helper. Design drafts, generated build products, local IDE settings, APKs, DMGs, and temporary previews are excluded from git.
+이 저장소는 macOS 앱, Android APK, 선택형 HID 도우미를 빌드/패키징하는 데 필요한 핵심 파일만 유지합니다. 생성된 빌드 결과물, 로컬 IDE 설정, APK/DMG, 임시 미리보기 파일은 git에서 제외합니다.
