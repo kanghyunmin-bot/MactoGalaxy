@@ -21,6 +21,8 @@ AOA_HELPER="$ROOT_DIR/.build/tools/aoa-hid-probe"
 STAGING_DIR="$DIST_DIR/macos-dmg"
 DMG_PATH="$DIST_DIR/MtoG-macos.dmg"
 README_PATH="$STAGING_DIR/README.txt"
+SIGN_IDENTITY="${MTOG_MAC_SIGN_IDENTITY:--}"
+NOTARY_PROFILE="${MTOG_NOTARY_PROFILE:-}"
 
 mkdir -p "$DIST_DIR"
 
@@ -71,9 +73,9 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.0</string>
+    <string>0.1.3</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>4</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>NSHighResolutionCapable</key>
@@ -90,7 +92,11 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-codesign --force --deep --sign - "$APP_DIR"
+if [ "$SIGN_IDENTITY" = "-" ]; then
+  codesign --force --deep --sign - "$APP_DIR"
+else
+  codesign --force --deep --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR"
+fi
 
 cp -R "$APP_DIR" "$STAGING_DIR/$APP_NAME"
 ln -s /Applications "$STAGING_DIR/Applications"
@@ -98,13 +104,13 @@ ln -s /Applications "$STAGING_DIR/Applications"
 cat > "$README_PATH" <<'README'
 MtoG macOS 빌드
 
-이 DMG는 개발용 임시 서명 빌드입니다.
-아직 Apple 공증 빌드는 아닙니다.
+MTOG_MAC_SIGN_IDENTITY와 MTOG_NOTARY_PROFILE 없이 만든 DMG는 개발용 임시 서명 빌드입니다.
+Apple Developer ID 서명과 Apple 공증을 적용한 빌드가 아니면 macOS Gatekeeper가 별도 허용을 요구할 수 있습니다.
 
 설치:
 1. MtoG.app을 Applications 폴더로 드래그하세요
 2. 앱을 실행하세요
-3. macOS가 차단하면 앱을 우클릭한 뒤 열기를 선택하세요
+3. macOS가 차단하면 앱을 우클릭한 뒤 열기를 선택하거나 시스템 설정 > 개인정보 보호 및 보안에서 열기를 허용하세요
 README
 
 hdiutil create \
@@ -112,6 +118,14 @@ hdiutil create \
   -srcfolder "$STAGING_DIR" \
   -format UDZO \
   "$DMG_PATH" >/dev/null
+
+if [ "$SIGN_IDENTITY" != "-" ]; then
+  codesign --force --timestamp --sign "$SIGN_IDENTITY" "$DMG_PATH"
+  if [ -n "$NOTARY_PROFILE" ]; then
+    xcrun notarytool submit "$DMG_PATH" --keychain-profile "$NOTARY_PROFILE" --wait
+    xcrun stapler staple "$DMG_PATH"
+  fi
+fi
 
 echo "생성 완료:"
 echo "  $APP_DIR"

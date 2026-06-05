@@ -22,10 +22,10 @@ MtoG는 Mac과 Galaxy Tab을 연결해 갤럭시 화면 미러링, 클립보드 
     <td align="center" width="50%">
       <h1>📱</h1>
       <h2>Galaxy Tab</h2>
-      <p><strong>MtoG-android-debug.apk</strong></p>
-      <p>Galaxy Tab 앱 설치 파일입니다.</p>
+      <p><strong>MtoG-android-release.apk</strong></p>
+      <p>Galaxy Tab 앱 설치 파일입니다. Play Store 배포 전까지는 Play Protect 경고가 표시될 수 있습니다.</p>
       <p>
-        <a href="https://github.com/kanghyunmin-bot/MactoGalaxy/releases/latest/download/MtoG-android-debug.apk">
+        <a href="https://github.com/kanghyunmin-bot/MactoGalaxy/releases/latest/download/MtoG-android-release.apk">
           <strong>APK 다운로드</strong>
         </a>
       </p>
@@ -36,7 +36,7 @@ MtoG는 Mac과 Galaxy Tab을 연결해 갤럭시 화면 미러링, 클립보드 
 ## 빠른 시작
 
 1. Mac에서 `MtoG-macos.dmg`를 열고 `MtoG.app`을 Applications 폴더로 옮깁니다.
-2. Galaxy Tab에서 `MtoG-android-debug.apk`를 설치합니다.
+2. Galaxy Tab에서 `MtoG-android-release.apk`를 설치합니다.
 3. Mac과 Galaxy Tab을 USB-C to USB-C 케이블로 연결합니다.
 4. Galaxy Tab에서 USB 디버깅 허용 팝업이 뜨면 허용합니다.
 5. 양쪽 기기에서 `MtoG`를 실행합니다.
@@ -54,6 +54,14 @@ macOS 권한은 기능별로 다릅니다. 앱 실행과 USB 연결만으로 모
 - `손쉬운 사용`: 실험적 외장 디스플레이 터치 입력 또는 접근성 fallback 제어에만 필요합니다.
 - `화면 기록`: macOS 화면 자체를 캡처하는 기능을 추가로 사용할 때만 필요할 수 있습니다.
 
+### macOS Gatekeeper 경고
+
+현재 공개 DMG는 Apple Developer ID 서명/공증 빌드가 아니면 macOS가 `확인되지 않은 개발자` 경고를 띄울 수 있습니다.
+
+- 개발용 배포: 앱 우클릭 > `열기`, 또는 `시스템 설정 > 개인정보 보호 및 보안`에서 수동 허용이 필요할 수 있습니다.
+- 일반 사용자 배포: Apple Developer Program 가입, Developer ID Application 인증서, `notarytool` 공증, `stapler` 적용이 필요합니다.
+- 앱이 macOS 설정을 자동으로 열거나 권한을 자동 부여하는 것은 보안상 불가능합니다.
+
 ## Galaxy Tab 권한
 
 Galaxy Tab에서는 아래 설정이 필요할 수 있습니다.
@@ -62,6 +70,14 @@ Galaxy Tab에서는 아래 설정이 필요할 수 있습니다.
 - `알림 허용`: 알림창의 수동 클립보드 동기화 버튼을 쓸 때만 필요합니다. 앱 실행 직후에는 요청하지 않습니다.
 - `MtoG 접근성 서비스`: 접근성 fallback 제스처/커서 보조 기능을 쓸 때만 필요합니다.
 - `MtoG 키보드`: 한글/유니코드 원격 입력 안정성을 높일 때 선택적으로 사용합니다.
+
+### Google Play Protect 경고
+
+GitHub에서 직접 받은 APK는 Play Store 설치가 아니므로 Google Play Protect가 unknown app 또는 scan 경고를 표시할 수 있습니다.
+
+- 개발/테스트 배포: release-signed APK를 사용해 debug APK 경고를 줄입니다.
+- 일반 사용자 배포: Google Play Console 또는 Samsung Galaxy Store 배포가 필요합니다.
+- Play Protect 자체를 앱 코드로 끄거나 우회하는 것은 불가능하고, 그렇게 설계하면 보안상 잘못된 제품입니다.
 
 ## 주요 기능
 
@@ -155,6 +171,43 @@ cd apps/android-companion
 
 ```text
 apps/android-companion/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Android release APK
+
+처음 한 번 로컬 release keystore를 생성합니다.
+
+```bash
+./scripts/generate-android-release-keystore.sh
+. ./.env.signing.local
+./scripts/package-android-release.sh
+```
+
+결과물:
+
+```text
+dist/MtoG-android-release.apk
+```
+
+주의: `secrets/mtog-release.jks`와 `.env.signing.local`은 절대 GitHub에 올리지 마세요. 이 키를 잃어버리면 같은 앱 ID로 업데이트 설치가 어려워집니다.
+
+### macOS Developer ID 공증 빌드
+
+Apple Developer ID 인증서와 notarytool keychain profile이 있는 경우:
+
+```bash
+export MTOG_MAC_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+export MTOG_NOTARY_PROFILE="mtog-notary"
+./scripts/package-macos-dmg.sh
+```
+
+`MTOG_NOTARY_PROFILE`은 사전에 아래처럼 등록해야 합니다.
+
+```bash
+xcrun notarytool store-credentials mtog-notary \
+  --apple-id "you@example.com" \
+  --team-id "TEAMID" \
+  --password "app-specific-password"
 ```
 
 ## 소스 구조

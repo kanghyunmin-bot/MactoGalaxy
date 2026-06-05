@@ -8,21 +8,46 @@ android {
     namespace = "com.mtog.app"
     compileSdk = 35
 
+    val releaseKeystore = System.getenv("MTOG_ANDROID_KEYSTORE")
+    val releaseStorePassword = System.getenv("MTOG_ANDROID_KEYSTORE_PASSWORD")
+    val releaseKeyAlias = System.getenv("MTOG_ANDROID_KEY_ALIAS")
+    val releaseKeyPassword = System.getenv("MTOG_ANDROID_KEY_PASSWORD")
+    val hasReleaseSigning = listOf(
+        releaseKeystore,
+        releaseStorePassword,
+        releaseKeyAlias,
+        releaseKeyPassword
+    ).all { !it.isNullOrBlank() }
+
     defaultConfig {
         applicationId = "com.mtog.app"
         minSdk = 31
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 4
+        versionName = "0.1.3"
 
         vectorDrawables {
             useSupportLibrary = true
         }
     }
 
+    signingConfigs {
+        create("release") {
+            if (hasReleaseSigning) {
+                storeFile = file(releaseKeystore!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
