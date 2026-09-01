@@ -20,8 +20,8 @@ At baseline, the Mac and Android control channel used newline-delimited JSON. An
 
 Slice 2 replaced that path on both platforms with the bounded binary-header control parser, canonical JSON payloads, connection-bound replay state, and exponential retry delays.
 
-The external-display worker combines private virtual-display calls, image capture, JPEG encoding, sockets, and input in one file. Android decodes those JPEG frames into Bitmap state.
+At baseline, the external-display worker combined private virtual-display calls, image capture, JPEG encoding, sockets, and input in one file. Slice 5 split the worker and replaced Mac capture/send with ScreenCaptureKit, hardware VideoToolbox, and MTGV packets. Android still decodes the legacy JPEG stream until slice 6 replaces its receiver.
 
-`AppModel` and Android `SessionRuntime` combine connection, pairing, clipboard, input, mirror, display, and discovery state. Some ADB and scrcpy commands do not select a serial. Clipboard automatic observation is not started by either application.
+`AppModel` and Android `SessionRuntime` combine connection, pairing, clipboard, input, mirror, display, and discovery state. Some ADB and scrcpy commands do not select a serial. Automatic clipboard production authority is blocked rather than using an Android listener or permission workaround.
 
-The external-display, serial-selection, and combined-state paths remain until their owning slices replace them. Automatic clipboard has tested pure and fake paths, but production shell authority is `BLOCKED`; manual clipboard and history remain available. `docs/refactor-progress.md` lists them as open debt.
+The Android external-display receiver, serial-selection, and combined-state paths remain until their owning slices replace them. Automatic clipboard has tested pure and fake paths, but production shell authority is `BLOCKED`; manual clipboard and history remain available. `docs/refactor-progress.md` lists them as open debt.

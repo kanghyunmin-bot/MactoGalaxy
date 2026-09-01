@@ -35,6 +35,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "MtoGExternalDisplayWorker",
+            dependencies: ["MtoGCore", "MtoGMedia"],
             path: "Sources/MtoGExternalDisplayWorker"
         ),
         .testTarget(

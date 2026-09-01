@@ -39,4 +39,23 @@ if grep -E 'JSON|Base64' Sources/MtoGCore/Video*.swift \
 fi
 grep -q 'MTGV' docs/protocol-v2.md
 
+if grep -R -E 'CGDisplayCreateImage|MTOGVD1|"FRAM"|UTType\.jpeg|ImageIO' \
+    Sources/MtoGExternalDisplayWorker >/dev/null; then
+    echo "legacy Mac external display path found" >&2
+    exit 1
+fi
+
+if grep -R -E 'NSClassFromString\("CGVirtualDisplay|initWithDescriptor:|applySettings:' \
+    Sources/MtoGExternalDisplayWorker --exclude=CGVirtualDisplayBackend.swift >/dev/null; then
+    echo "private virtual display call escaped its backend" >&2
+    exit 1
+fi
+
+if grep -R -E '^import (AppKit|SwiftUI)$|ADB' Sources/MtoGMedia >/dev/null; then
+    echo "MtoGMedia imported UI or ADB" >&2
+    exit 1
+fi
+grep -q '^import ScreenCaptureKit$' Sources/MtoGExternalDisplayWorker/ScreenCaptureSource.swift
+grep -q '^import VideoToolbox$' Sources/MtoGMedia/RealtimeVideoEncoder.swift
+
 echo "registered legacy path checks: PASS"

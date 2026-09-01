@@ -16,7 +16,7 @@ The tracked baseline was clean. Swift 6.3.3 debug build passed. macOS Java looku
 | S2 | Bounded control session | PASS | DEVICE_TEST_PENDING | Live pairing, transport, and reconnect require hardware |
 | S3 | Automatic text/URL clipboard | PASS | BLOCKED | Production standalone shell authority is not verified |
 | S4 | Video protocol and synthetic transport | PASS | DEVICE_TEST_PENDING | VideoToolbox and MediaCodec are not part of this slice |
-| S5 | Mac capture and encode | NOT_STARTED | DEVICE_TEST_PENDING | JPEG worker remains |
+| S5 | Mac capture and encode | PASS | DEVICE_TEST_PENDING | Private display creation and capture permission require hardware validation |
 | S6 | Android decode and Surface | NOT_STARTED | DEVICE_TEST_PENDING | Bitmap decode remains |
 | S7 | Session, input, and ADB serial integration | NOT_STARTED | DEVICE_TEST_PENDING | Commands can select arbitrary devices |
 | S8 | Simplified UI | NOT_STARTED | DEVICE_TEST_PENDING | Current UI and combined state remain |
@@ -94,3 +94,21 @@ Verification:
 Independent review found unbound reconnect sessions, keyframe-eviction recovery gaps, whole-chunk Swift parser allocation, signed sequence mismatch, encoder/header validation differences, ignored reserved bytes, and a test-count error. Those were fixed with expected-session binding, session/sequence recovery boundaries, region-streamed parsing, signed-range parity, canonical header checks, and updated tests/docs. Re-review then found delayed acknowledgement coverage gaps; both suites now verify stale same-session and old-session acknowledgements plus active-boundary reset.
 
 Hardware encoding and decoding remain outside this slice and `DEVICE_TEST_PENDING`.
+
+## S5 Mac capture and encode
+
+Changed files: MtoGMedia NAL conversion, hardware encoder/decoder and realtime encoder, VideoToolbox round-trip tests, decomposed worker backend/capture/encoder/sender/input/lifecycle files, package dependencies, benchmark script, static checks, and architecture/progress documents.
+
+Test-first result: Swift test compilation failed because VideoToolbox capability, encoder, decoder, and round-trip result types did not exist. The implemented tests encode synthetic BGRA frames with required hardware H.264, packetize Annex-B config/access units through fragmented MTGV transport, reconstruct samples, and decode with VideoToolbox. HEVC uses the same path when hardware is available and otherwise returns an explicit unavailable reason.
+
+Verification:
+
+- `swift test --no-parallel`: PASS, 26 tests. H.264 and available HEVC hardware round trips pass with frame count, dimensions, monotonic timestamps, config, and keyframe evidence.
+- `swift build` and `swift build -c release`: PASS with the decomposed worker.
+- `./gradlew :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`: PASS.
+- `./scripts/verify-no-device.sh`: PASS after the final backpressure race test.
+- Static search finds no `CGDisplayCreateImage`, JPEG, `FRAM`, or `MTOGVD1` in the worker. Private virtual-display lookup is confined to `CGVirtualDisplayBackend.swift`.
+
+The worker uses a latest-frame ScreenCaptureKit callback queue, a separate encode loop, a latest-only encoded pump, and a one-second socket send timeout. Bitrate is resolution-based and capped at 40 Mbps with a data-rate window. Receiver capability negotiation defaults to H.264 until capabilities are supplied and permits one hardware HEVC-to-H.264 fallback. VideoToolbox frame drops are nonfatal. Shutdown stops capture, completes compression, drains bounded output, closes video/input sockets, joins touch input, releases the display, and removes ADB mappings.
+
+Independent review found unbounded output, blocking shutdown, unbounded bitrate, fatal normal frame drops, missing receiver negotiation/fallback, unjoined touch input, stopped-queue retention, and config/keyframe backpressure races. All were fixed and the final narrow review reported no findings. Private display creation and real ScreenCaptureKit permission remain `DEVICE_TEST_PENDING`.
