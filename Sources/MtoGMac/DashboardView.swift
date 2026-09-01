@@ -359,6 +359,11 @@ private struct ClipboardPanel: View {
                 .foregroundStyle(AppTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
 
+            Text(model.automaticClipboardStatus)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(AppTheme.warning)
+                .fixedSize(horizontal: false, vertical: true)
+
             HStack(spacing: 10) {
                 Button("Mac 클립보드 보내기") {
                     model.pushCurrentClipboardToAndroid()

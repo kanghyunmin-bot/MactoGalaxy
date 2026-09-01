@@ -14,7 +14,7 @@ The tracked baseline was clean. Swift 6.3.3 debug build passed. macOS Java looku
 |---|---|---|---|---|
 | S1 | Repository harness and fixture skeleton | PASS | DEVICE_TEST_PENDING | No physical device or emulator baseline |
 | S2 | Bounded control session | PASS | DEVICE_TEST_PENDING | Live pairing, transport, and reconnect require hardware |
-| S3 | Automatic text/URL clipboard | NOT_STARTED | BLOCKED | No verified standalone shell authority |
+| S3 | Automatic text/URL clipboard | PASS | BLOCKED | Production standalone shell authority is not verified |
 | S4 | Video protocol and synthetic transport | NOT_STARTED | DEVICE_TEST_PENDING | Binary framing not implemented |
 | S5 | Mac capture and encode | NOT_STARTED | DEVICE_TEST_PENDING | JPEG worker remains |
 | S6 | Android decode and Surface | NOT_STARTED | DEVICE_TEST_PENDING | Bitmap decode remains |
@@ -60,3 +60,20 @@ Verification:
 Independent protocol review found and then rechecked timestamp incompatibility, stale replay, socket replacement races, reconnect resets, pre-handshake connected state, sequence ordering, maximum-frame concatenation, legacy mismatch reporting, UUID and geometry differences, pre-trust clipboard disclosure, handshake ordering, and reconnect-time clipboard races. The implementation now uses a four-message nonce handshake, exact confirmation ID echo, per-socket generation, serialized Android sequence/write assignment, strict trust gates on both peers, and generation-bound Mac clipboard sends. The final narrow review reported no remaining trust race.
 
 Physical pairing, reconnect, LAN, and USB behavior remain `DEVICE_TEST_PENDING`. Session tokens and nonces do not provide transport encryption.
+
+## S3 automatic text/URL clipboard
+
+Changed files: shared clipboard event, loop guard, coordinator, in-memory store/transport, Swift and Kotlin tests, Mac pasteboard/backend/coordinator files, scrcpy arguments, Android manual clipboard manager, current UI status, static checks, and verification documents.
+
+Test-first result: Swift and Kotlin tests failed because clipboard event, engine, result, and transport types did not exist. The pure implementations now validate UTF-8 byte limits and SHA-256, reject reflected hashes, duplicate sequences, and old sessions, and preserve recent hashes across reconnects.
+
+Verification:
+
+- `swift test --no-parallel`: PASS, 14 tests. Fake store/transport tests exercise Korean, emoji, URLs, rapid changes, reconnect staleness, bad hashes, maximum and oversized content, stop, and blocked authority.
+- `swift build` and `swift build -c release`: PASS.
+- `./gradlew :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`: PASS. Kotlin fake transport covers the same edge set.
+- `./scripts/verify-no-device.sh`: PASS after the final adapter and validation changes.
+
+scrcpy 3.3.4 documents mirror clipboard autosync, so mirror launch no longer passes `--no-clipboard-autosync`. Its help exposes no verified standalone clipboard authority. `ShellClipboardTransport` therefore returns `BLOCKED` and starts no process. Android attaches no clipboard listener and keeps explicit manual sync.
+
+Independent review found incorrect pasteboard suppression, unchecked public event construction, binary/file observation regression, and fake-transport coverage gaps. The adapter now suppresses an exact change count, has a separate all-types observation callback, both engines reject invalid identity/sequence/content, and both fake transports run the full edge set. Re-review reported no remaining findings. Manual image/video/file transfer and history code remain in place.

@@ -42,7 +42,6 @@ final class ScrcpyMirrorBridge: @unchecked Sendable {
                 "--mouse=sdk",
                 "--mouse-bind=++++:++++",
                 "--shortcut-mod=lalt,ralt",
-                "--no-clipboard-autosync",
                 "--video-codec=h264",
                 "--video-bit-rate=32M",
                 "--max-fps=60",

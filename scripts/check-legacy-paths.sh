@@ -17,7 +17,19 @@ if grep -E 'SessionCodec|encodeLine|decodeLine|firstIndex\(of: 0x0A\)' \
     exit 1
 fi
 
+if grep -R -- '--no-clipboard-autosync' Sources apps/android-companion/app/src/main >/dev/null; then
+    echo "scrcpy clipboard autosync is disabled" >&2
+    exit 1
+fi
+
+if grep -E 'OnPrimaryClipChangedListener|addPrimaryClipChangedListener' \
+    apps/android-companion/app/src/main/java/com/mtog/app/clipboard/ClipboardSyncManager.kt >/dev/null; then
+    echo "Android background clipboard listener found" >&2
+    exit 1
+fi
+
 grep -q 'implementation(project(":core"))' apps/android-companion/app/build.gradle.kts
 grep -q 'dependencies: \["MtoGCore"\]' Package.swift
+grep -q 'ClipboardAuthorityStatus = .blocked' Sources/MtoGMac/ShellClipboardTransport.swift
 
 echo "registered legacy path checks: PASS"

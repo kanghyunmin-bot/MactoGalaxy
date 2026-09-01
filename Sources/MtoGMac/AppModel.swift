@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import MtoGCore
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -67,6 +68,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var edgeInstructionText = ""
     @Published private(set) var lastEdgeEventDescription = "포인터 전환 대기 중"
     @Published private(set) var clipboardSyncStatus = "클립보드 동기화 대기 중"
+    @Published private(set) var automaticClipboardStatus = "자동 클립보드 확인 중"
     @Published private(set) var pairingStatusText = "갤럭시 앱에 표시된 4자리 코드를 이 Mac에 입력하세요"
     @Published private(set) var trustedPeerCount = 0
     @Published private(set) var controlStatusText = "원격 조작 대기 중"
@@ -95,6 +97,7 @@ final class AppModel: ObservableObject {
     private let trustedPeerStore: TrustedPeerStore
     private let edgeMonitor: PointerEdgeMonitor
     private let clipboardSyncController: ClipboardSyncController
+    private let clipboardCoordinator: ClipboardCoordinator
     private let clipboardHistoryPersistence: ClipboardHistoryPersistence
     private let controlInputController: ControlModeInputController
     private var cancellables: Set<AnyCancellable> = []
@@ -114,6 +117,7 @@ final class AppModel: ObservableObject {
         self.sessionClient = SessionClient(identity: localIdentity)
         self.edgeMonitor = PointerEdgeMonitor()
         self.clipboardSyncController = ClipboardSyncController()
+        self.clipboardCoordinator = ClipboardCoordinator(sourceID: ClipboardSyncPayload.localSourceId)
         self.clipboardHistoryPersistence = ClipboardHistoryPersistence()
         self.aoaHidBridge = AoaHidBridge()
         self.scrcpyMirrorBridge = ScrcpyMirrorBridge()
@@ -208,6 +212,19 @@ final class AppModel: ObservableObject {
         refreshTrustSummary()
         bindSessionState()
         bindClipboardSync()
+        clipboardCoordinator.statusHandler = { [weak self] status in
+            switch status {
+            case .available:
+                self?.automaticClipboardStatus = "자동 텍스트 클립보드 사용 가능"
+            case .blocked(let reason):
+                self?.automaticClipboardStatus = "BLOCKED: \(reason)"
+            case .stopped:
+                self?.automaticClipboardStatus = "자동 클립보드 중지됨"
+            case .failed(let reason):
+                self?.automaticClipboardStatus = "자동 클립보드 오류: \(reason)"
+            }
+        }
+        clipboardCoordinator.start(sessionID: "authority-unavailable")
         bindWirelessDiscovery()
     }
 
@@ -271,6 +288,8 @@ final class AppModel: ObservableObject {
     }
 
     func shutdownForTermination() {
+        clipboardCoordinator.stop()
+        clipboardSyncController.stop()
         scrcpyMirrorBridge.stop()
         virtualDisplayBridge.stopImmediately()
     }

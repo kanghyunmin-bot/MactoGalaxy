@@ -24,4 +24,4 @@ The external-display worker combines private virtual-display calls, image captur
 
 `AppModel` and Android `SessionRuntime` combine connection, pairing, clipboard, input, mirror, display, and discovery state. Some ADB and scrcpy commands do not select a serial. Clipboard automatic observation is not started by either application.
 
-The external-display, serial-selection, clipboard-lifecycle, and combined-state paths remain until their owning slices replace them. `docs/refactor-progress.md` lists them as open debt.
+The external-display, serial-selection, and combined-state paths remain until their owning slices replace them. Automatic clipboard has tested pure and fake paths, but production shell authority is `BLOCKED`; manual clipboard and history remain available. `docs/refactor-progress.md` lists them as open debt.

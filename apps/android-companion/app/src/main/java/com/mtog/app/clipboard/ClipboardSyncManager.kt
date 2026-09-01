@@ -95,25 +95,17 @@ class ClipboardSyncManager(
     private val localSourceId: String by lazy { loadOrCreateSourceId() }
 
     private var started = false
-    private var listenerAttached = false
-    private var suppressedLocalChangeCount = 0
     private var lastObservedSignature: String? = null
-    private var localPayloadHandler: ((ClipboardTransferPayload) -> Unit)? = null
 
-    private val listener = ClipboardManager.OnPrimaryClipChangedListener {
-        handlePrimaryClipChanged()
-    }
-
-    fun start(localPayloadHandler: (ClipboardTransferPayload) -> Unit) {
+    fun start() {
         if (started) {
             return
         }
 
-        this.localPayloadHandler = localPayloadHandler
         cleanupSharedDirectory()
         lastObservedSignature = safeReadPrimaryClipPayload()?.signature
         started = true
-        SessionRuntime.markClipboardEvent("수동 클립보드 동기화 준비 완료")
+        SessionRuntime.markClipboardEvent("자동 text/URL: BLOCKED · 수동 클립보드 동기화 준비 완료")
     }
 
     fun stop() {
@@ -121,12 +113,6 @@ class ClipboardSyncManager(
             return
         }
 
-        if (listenerAttached) {
-            clipboardManager.removePrimaryClipChangedListener(listener)
-            listenerAttached = false
-        }
-        localPayloadHandler = null
-        suppressedLocalChangeCount = 0
         started = false
         SessionRuntime.markClipboardEvent("수동 클립보드 동기화가 중지되었습니다")
     }
@@ -168,7 +154,6 @@ class ClipboardSyncManager(
                     SessionRuntime.markClipboardEvent("Mac 텍스트 클립보드를 거절했습니다: 무결성 확인 실패")
                     return
                 }
-                suppressLocalChanges()
                 clipboardManager.setPrimaryClip(ClipData.newPlainText("MtoG Remote", text))
                 lastObservedSignature = ClipboardTransferPayload(
                     kind = kind,
@@ -231,7 +216,6 @@ class ClipboardSyncManager(
                     ClipDescription(label, arrayOf(mimeType)),
                     ClipData.Item(uri)
                 )
-                suppressLocalChanges()
                 clipboardManager.setPrimaryClip(clip)
                 val transferPayload = ClipboardTransferPayload(
                     kind = kind,
@@ -267,7 +251,6 @@ class ClipboardSyncManager(
 
         val previousClip = clipboardManager.primaryClip
         val previousSignature = lastObservedSignature
-        suppressLocalChanges(if (previousClip != null) 2 else 1)
         clipboardManager.setPrimaryClip(ClipData.newPlainText("MtoG Keyboard", text))
 
         return try {
@@ -280,28 +263,6 @@ class ClipboardSyncManager(
             }
             lastObservedSignature = previousSignature
         }
-    }
-
-    private fun handlePrimaryClipChanged() {
-        if (suppressedLocalChangeCount > 0) {
-            suppressedLocalChangeCount -= 1
-            lastObservedSignature = safeReadPrimaryClipPayload()?.signature
-            SessionRuntime.markClipboardEvent("앱이 적용한 클립보드 반영은 무시했습니다")
-            return
-        }
-
-        val payload = safeReadPrimaryClipPayload() ?: run {
-            SessionRuntime.markClipboardEvent("갤럭시 클립보드가 비어 있거나, 지원하지 않거나, Android 정책으로 차단되었습니다")
-            return
-        }
-        if (payload.signature == lastObservedSignature) {
-            return
-        }
-        lastObservedSignature = payload.signature
-
-        recordLocalPayload(payload, detailSuffix = "갤럭시 클립보드에서 받음")
-        localPayloadHandler?.invoke(payload)
-        SessionRuntime.markClipboardEvent("갤럭시 ${payload.kind} 클립보드 변경을 감지했습니다")
     }
 
     private fun recordLocalPayload(payload: ClipboardTransferPayload, detailSuffix: String) {
@@ -488,12 +449,6 @@ class ClipboardSyncManager(
             else -> "clipboard-file"
         }
         return if (extension != null) "$baseName.$extension" else "$baseName.bin"
-    }
-
-    private fun suppressLocalChanges(count: Int = 1) {
-        if (count > 0) {
-            suppressedLocalChangeCount += count
-        }
     }
 
     private fun loadOrCreateSourceId(): String {

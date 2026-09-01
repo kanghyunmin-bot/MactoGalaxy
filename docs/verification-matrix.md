@@ -9,7 +9,7 @@
 | Manual image and file clipboard | Existing app path remains during refactor | DEVICE_TEST_PENDING |
 | Mirror and USB bootstrap | Existing app path remains during refactor | DEVICE_TEST_PENDING |
 | Input and AOA HID | Existing app path remains during refactor | DEVICE_TEST_PENDING |
-| Automatic text/URL clipboard | Fake transport planned in S3 | BLOCKED until production shell authority is verified |
+| Automatic text/URL clipboard | Swift in-memory store/transport round trip plus Swift/Kotlin event, hash, loop, replay, reconnect, UTF-8, URL, and 256 KiB tests | BLOCKED until production shell authority is verified |
 | H.264/HEVC stream | Synthetic and VideoToolbox tests planned in S4-S5 | DEVICE_TEST_PENDING for MediaCodec display |
 | Private virtual display | Build and failure isolation planned in S5 | DEVICE_TEST_PENDING |
 | UI states | Reducer tests and Mac mock-state exercise planned in S8 | Android interaction DEVICE_TEST_PENDING without emulator |

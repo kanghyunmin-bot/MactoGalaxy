@@ -71,9 +71,7 @@ class AdbLoopbackServer(
 
         ClipboardHistoryStore.initialize(appContext)
         PairingStore.initialize(appContext)
-        clipboardSyncManager.start { payload ->
-            handleLocalClipboardPayload(payload)
-        }
+        clipboardSyncManager.start()
         SessionRuntime.markStarting()
         acceptJob = scope.launch(Dispatchers.IO) {
             try {
@@ -320,15 +318,6 @@ class AdbLoopbackServer(
                                 )
                             )
                         )
-                        if (activePeerTrusted) clipboardSyncManager.currentPayload()?.let { payload ->
-                            send(
-                                writer,
-                                buildEnvelope(
-                                    type = SessionMessageType.ClipboardPreview,
-                                    payload = payload.toWirePayload()
-                                )
-                            )
-                        }
                     }
 
                     SessionMessageType.PairRequest -> {
