@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "MtoGAndroid"
-include(":app")
+include(":app", ":core")

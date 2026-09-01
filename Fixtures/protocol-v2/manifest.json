@@ -1,0 +1,9 @@
+{
+  "protocolVersion": 2,
+  "limits": {
+    "controlPayloadBytes": 37748736,
+    "videoPayloadBytes": 8388608,
+    "automaticClipboardBytes": 262144
+  },
+  "fixtures": []
+}
