@@ -8,6 +8,7 @@ let package = Package(
     ],
     products: [
         .library(name: "MtoGCore", targets: ["MtoGCore"]),
+        .library(name: "MtoGMedia", targets: ["MtoGMedia"]),
         .executable(name: "MtoGMac", targets: ["MtoGMac"]),
         .executable(name: "MtoGExternalDisplayWorker", targets: ["MtoGExternalDisplayWorker"])
     ],
@@ -21,6 +22,11 @@ let package = Package(
         .target(
             name: "MtoGCore",
             path: "Sources/MtoGCore"
+        ),
+        .target(
+            name: "MtoGMedia",
+            dependencies: ["MtoGCore"],
+            path: "Sources/MtoGMedia"
         ),
         .executableTarget(
             name: "MtoGMac",
@@ -38,6 +44,15 @@ let package = Package(
                 .product(name: "Testing", package: "swift-testing")
             ],
             path: "Tests/MtoGCoreTests"
+        ),
+        .testTarget(
+            name: "MtoGMediaTests",
+            dependencies: [
+                "MtoGCore",
+                "MtoGMedia",
+                .product(name: "Testing", package: "swift-testing")
+            ],
+            path: "Tests/MtoGMediaTests"
         )
     ]
 )

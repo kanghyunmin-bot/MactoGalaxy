@@ -33,8 +33,28 @@ Incremental parsers reject invalid magic, version, channel, type, UTF-8, JSON, t
 
 `Fixtures/protocol-v2/control/hello.json` and `hello.frame` are the canonical semantic and byte vectors. Swift and Kotlin both encode and decode the same frame.
 
-## Video frame
+## Video packet
 
-The fixed binary video header will contain packet kind, codec, session ID, sequence, presentation timestamp, dimensions, flags, and payload length. Codec configuration is distinct from access units. Config, frame, and recovery-control payloads each have explicit limits. Video payloads are raw bytes, not JSON or Base64.
+The video header is 64 bytes. Integers use network byte order.
 
-The video wire format and canonical fixture bytes are added in slice 4.
+| Offset | Bytes | Field |
+|---:|---:|---|
+| 0 | 4 | ASCII `MTGV` |
+| 4 | 1 | Version `2` |
+| 5 | 1 | Kind: config `1`, access unit `2`, control `3` |
+| 6 | 1 | Codec: H.264 `1`, HEVC `2` |
+| 7 | 1 | Flags; bit 0 marks a keyframe |
+| 8 | 16 | Session UUID |
+| 24 | 8 | Sequence |
+| 32 | 8 | Presentation timestamp in microseconds |
+| 40 | 4 | Width |
+| 44 | 4 | Height |
+| 48 | 4 | Payload length |
+| 52 | 1 | Control code |
+| 53 | 11 | Reserved zero bytes |
+
+Access-unit payloads are limited to 8 MiB, codec configuration to 256 KiB, and control payloads to 64 KiB. Dimensions are positive and at most 8192. Payloads are raw bytes, not JSON or Base64. Config packets are distinct from access units. Control codes include keyframe request, stream start, stream stop, and capabilities.
+
+The receiver requires config before decoding and a keyframe after config, reconnect, or any undecoded queue eviction. Recovery clears only when a newer keyframe from the affected session is decoded. It rejects stale sessions and non-increasing sequences. HEVC can fall back to H.264 once. The latest-frame queue has an explicit capacity and marks keyframe recovery after any undecoded frame eviction.
+
+`Fixtures/protocol-v2/video/` contains shared H.264 config, keyframe, and delta semantic and binary vectors. Swift and Kotlin encode and decode the same packet bytes.

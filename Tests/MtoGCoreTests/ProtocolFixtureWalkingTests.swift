@@ -17,6 +17,9 @@ struct ProtocolFixtureWalkingTests {
         #expect(object["protocolVersion"] as? Int == ProtocolLimits.version)
         #expect(limits["controlPayloadBytes"] as? Int == ProtocolLimits.controlPayloadBytes)
         #expect(limits["videoPayloadBytes"] as? Int == ProtocolLimits.videoPayloadBytes)
+        #expect(limits["videoConfigBytes"] as? Int == ProtocolLimits.videoConfigBytes)
+        #expect(limits["videoControlBytes"] as? Int == ProtocolLimits.videoControlBytes)
+        #expect(limits["maximumVideoDimension"] as? Int == ProtocolLimits.maximumVideoDimension)
         #expect(limits["automaticClipboardBytes"] as? Int == ProtocolLimits.automaticClipboardBytes)
     }
 }

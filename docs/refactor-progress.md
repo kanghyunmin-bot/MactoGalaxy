@@ -15,7 +15,7 @@ The tracked baseline was clean. Swift 6.3.3 debug build passed. macOS Java looku
 | S1 | Repository harness and fixture skeleton | PASS | DEVICE_TEST_PENDING | No physical device or emulator baseline |
 | S2 | Bounded control session | PASS | DEVICE_TEST_PENDING | Live pairing, transport, and reconnect require hardware |
 | S3 | Automatic text/URL clipboard | PASS | BLOCKED | Production standalone shell authority is not verified |
-| S4 | Video protocol and synthetic transport | NOT_STARTED | DEVICE_TEST_PENDING | Binary framing not implemented |
+| S4 | Video protocol and synthetic transport | PASS | DEVICE_TEST_PENDING | VideoToolbox and MediaCodec are not part of this slice |
 | S5 | Mac capture and encode | NOT_STARTED | DEVICE_TEST_PENDING | JPEG worker remains |
 | S6 | Android decode and Surface | NOT_STARTED | DEVICE_TEST_PENDING | Bitmap decode remains |
 | S7 | Session, input, and ADB serial integration | NOT_STARTED | DEVICE_TEST_PENDING | Commands can select arbitrary devices |
@@ -77,3 +77,20 @@ Verification:
 scrcpy 3.3.4 documents mirror clipboard autosync, so mirror launch no longer passes `--no-clipboard-autosync`. Its help exposes no verified standalone clipboard authority. `ShellClipboardTransport` therefore returns `BLOCKED` and starts no process. Android attaches no clipboard listener and keeps explicit manual sync.
 
 Independent review found incorrect pasteboard suppression, unchecked public event construction, binary/file observation regression, and fake-transport coverage gaps. The adapter now suppresses an exact change count, has a separate all-types observation callback, both engines reject invalid identity/sequence/content, and both fake transports run the full edge set. Re-review reported no remaining findings. Manual image/video/file transfer and history code remain in place.
+
+## S4 video protocol and synthetic transport
+
+Changed files: shared video packet, parser, receiver state, latest-frame queue, fallback state, binary fixtures, MtoGMedia target, synthetic frame source, tests, fixture verifier, protocol documentation, and static checks.
+
+Test-first result: Swift and Kotlin compilation failed because video packet, parser, receiver, queue, and fallback types did not exist. The implementations use a 64-byte `MTGV` header, raw payloads, per-kind limits, UUID sessions, sequence and timestamp checks, config-before-frame rules, keyframe recovery, and a one-time HEVC fallback.
+
+Verification:
+
+- `swift test --no-parallel`: PASS, 22 tests including synthetic pattern framing with 7-byte fragmentation.
+- `swift build` and `swift build -c release`: PASS.
+- `./gradlew :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`: PASS with shared config/keyframe/delta fixtures and parser/state/queue tests.
+- `./scripts/verify-no-device.sh`: PASS after final recovery-boundary assertions.
+
+Independent review found unbound reconnect sessions, keyframe-eviction recovery gaps, whole-chunk Swift parser allocation, signed sequence mismatch, encoder/header validation differences, ignored reserved bytes, and a test-count error. Those were fixed with expected-session binding, session/sequence recovery boundaries, region-streamed parsing, signed-range parity, canonical header checks, and updated tests/docs. Re-review then found delayed acknowledgement coverage gaps; both suites now verify stale same-session and old-session acknowledgements plus active-boundary reset.
+
+Hardware encoding and decoding remain outside this slice and `DEVICE_TEST_PENDING`.

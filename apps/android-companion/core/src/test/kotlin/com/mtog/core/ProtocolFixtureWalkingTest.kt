@@ -26,6 +26,9 @@ class ProtocolFixtureWalkingTest {
             ProtocolLimits.VIDEO_PAYLOAD_BYTES,
             limits.getValue("videoPayloadBytes").jsonPrimitive.int
         )
+        assertEquals(ProtocolLimits.VIDEO_CONFIG_BYTES, limits.getValue("videoConfigBytes").jsonPrimitive.int)
+        assertEquals(ProtocolLimits.VIDEO_CONTROL_BYTES, limits.getValue("videoControlBytes").jsonPrimitive.int)
+        assertEquals(ProtocolLimits.MAXIMUM_VIDEO_DIMENSION, limits.getValue("maximumVideoDimension").jsonPrimitive.int)
         assertEquals(
             ProtocolLimits.AUTOMATIC_CLIPBOARD_BYTES,
             limits.getValue("automaticClipboardBytes").jsonPrimitive.int

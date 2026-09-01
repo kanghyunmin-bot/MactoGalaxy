@@ -1,0 +1,11 @@
+{
+  "codec": "h264",
+  "flags": 0,
+  "height": 1080,
+  "kind": "config",
+  "payloadHex": "0164001fffe10004",
+  "presentationTimeUs": 0,
+  "sequence": 1,
+  "sessionID": "10000000-0000-0000-0000-000000000001",
+  "width": 1920
+}

@@ -32,4 +32,11 @@ grep -q 'implementation(project(":core"))' apps/android-companion/app/build.grad
 grep -q 'dependencies: \["MtoGCore"\]' Package.swift
 grep -q 'ClipboardAuthorityStatus = .blocked' Sources/MtoGMac/ShellClipboardTransport.swift
 
+if grep -E 'JSON|Base64' Sources/MtoGCore/Video*.swift \
+    apps/android-companion/core/src/main/kotlin/com/mtog/core/Video*.kt >/dev/null; then
+    echo "video protocol uses JSON or Base64" >&2
+    exit 1
+fi
+grep -q 'MTGV' docs/protocol-v2.md
+
 echo "registered legacy path checks: PASS"
