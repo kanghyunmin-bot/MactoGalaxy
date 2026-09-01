@@ -2,7 +2,8 @@
 
 ## Baseline
 
-Date: 2026-09-01  
+Date: 2026-09-01
+
 Branch: `khm/mtog-harness-refactor`
 
 The tracked baseline was clean. Swift 6.3.3 debug build passed. macOS Java lookup failed, but existing Homebrew OpenJDK 17.0.19 made Gradle 8.10.2 and `:app:assembleDebug` pass when exported as `JAVA_HOME`. ADB 37.0.0 found no devices. scrcpy 3.3.4 was available. No emulator command was available.
