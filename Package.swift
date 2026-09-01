@@ -24,6 +24,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "MtoGMac",
+            dependencies: ["MtoGCore"],
             path: "Sources/MtoGMac"
         ),
         .executableTarget(

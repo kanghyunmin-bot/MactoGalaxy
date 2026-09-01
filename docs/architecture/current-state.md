@@ -14,12 +14,14 @@ The baseline ran on branch `main` before creating `khm/mtog-harness-refactor`. T
 | scrcpy | `3.3.4`; help exposes clipboard autosync but no standalone clipboard authority |
 | Emulator | Command unavailable; no emulator gate registered |
 
-## Legacy implementation
+## Baseline legacy implementation
 
-The Mac and Android control channel uses newline-delimited JSON. Android calls `BufferedReader.readLine()` before checking its size. The Mac retries at most eight times with linear delay.
+At baseline, the Mac and Android control channel used newline-delimited JSON. Android called `BufferedReader.readLine()` before checking its size. The Mac retried at most eight times with linear delay.
+
+Slice 2 replaced that path on both platforms with the bounded binary-header control parser, canonical JSON payloads, connection-bound replay state, and exponential retry delays.
 
 The external-display worker combines private virtual-display calls, image capture, JPEG encoding, sockets, and input in one file. Android decodes those JPEG frames into Bitmap state.
 
 `AppModel` and Android `SessionRuntime` combine connection, pairing, clipboard, input, mirror, display, and discovery state. Some ADB and scrcpy commands do not select a serial. Clipboard automatic observation is not started by either application.
 
-These paths remain until their owning refactor slice replaces them. `docs/refactor-progress.md` lists them as open debt.
+The external-display, serial-selection, clipboard-lifecycle, and combined-state paths remain until their owning slices replace them. `docs/refactor-progress.md` lists them as open debt.

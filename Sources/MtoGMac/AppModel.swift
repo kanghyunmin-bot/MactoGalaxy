@@ -374,8 +374,15 @@ final class AppModel: ObservableObject {
         }
 
         clipboardSyncStatus = "현재 Mac 클립보드를 갤럭시에 보내는 중"
+        let generation = sessionClient.activeSessionGeneration
         Task {
-            await sessionClient.sendClipboardPreview(payload: payload.wirePayload)
+            guard trustState.isTrusted,
+                  sessionClient.state == .connected,
+                  sessionClient.activeSessionGeneration == generation else { return }
+            await sessionClient.sendClipboardPreview(
+                payload: payload.wirePayload,
+                expectedGeneration: generation
+            )
         }
     }
 
@@ -571,8 +578,15 @@ final class AppModel: ObservableObject {
         }
 
         clipboardSyncStatus = "Mac 클립보드를 갤럭시에 보냈습니다"
+        let generation = sessionClient.activeSessionGeneration
         Task {
-            await sessionClient.sendClipboardPreview(payload: payload.wirePayload)
+            guard trustState.isTrusted,
+                  sessionClient.state == .connected,
+                  sessionClient.activeSessionGeneration == generation else { return }
+            await sessionClient.sendClipboardPreview(
+                payload: payload.wirePayload,
+                expectedGeneration: generation
+            )
         }
     }
 
@@ -586,6 +600,10 @@ final class AppModel: ObservableObject {
         }
 
         guard message.type == .clipboardPreview else {
+            return
+        }
+        guard trustState.isTrusted else {
+            clipboardSyncStatus = "신뢰되지 않은 기기의 클립보드를 거절했습니다"
             return
         }
 

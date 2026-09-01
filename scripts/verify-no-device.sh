@@ -49,6 +49,7 @@ cd "$ROOT_DIR/apps/android-companion"
 
 cd "$ROOT_DIR"
 ./scripts/verify-protocol-fixtures.sh
+./scripts/check-legacy-paths.sh
 ./scripts/check-repository-policy.sh
 ./scripts/check-no-secrets.sh
 

@@ -3,6 +3,7 @@
 | Area | No-device evidence | Device status |
 |---|---|---|
 | Shared limits | Swift and Kotlin read `Fixtures/protocol-v2/manifest.json` | Not required |
+| Control protocol v2 | Shared canonical frame, fragmentation, truncation, malformed header/JSON, replay, and backoff tests | DEVICE_TEST_PENDING for live pairing and reconnect |
 | Pairing identity and trust | Existing persistence formats remain unchanged | DEVICE_TEST_PENDING |
 | Clipboard history | Existing persistence formats remain unchanged | DEVICE_TEST_PENDING |
 | Manual image and file clipboard | Existing app path remains during refactor | DEVICE_TEST_PENDING |

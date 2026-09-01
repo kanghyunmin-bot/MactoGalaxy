@@ -5,5 +5,11 @@
     "videoPayloadBytes": 8388608,
     "automaticClipboardBytes": 262144
   },
-  "fixtures": []
+  "fixtures": [
+    {
+      "name": "control-hello",
+      "semanticPath": "control/hello.json",
+      "framePath": "control/hello.frame"
+    }
+  ]
 }

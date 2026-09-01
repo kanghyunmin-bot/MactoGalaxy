@@ -13,7 +13,7 @@ The tracked baseline was clean. Swift 6.3.3 debug build passed. macOS Java looku
 | ID | Slice | Status | Device status | Remaining risk |
 |---|---|---|---|---|
 | S1 | Repository harness and fixture skeleton | PASS | DEVICE_TEST_PENDING | No physical device or emulator baseline |
-| S2 | Bounded control session | NOT_STARTED | DEVICE_TEST_PENDING | Newline JSON remains |
+| S2 | Bounded control session | PASS | DEVICE_TEST_PENDING | Live pairing, transport, and reconnect require hardware |
 | S3 | Automatic text/URL clipboard | NOT_STARTED | BLOCKED | No verified standalone shell authority |
 | S4 | Video protocol and synthetic transport | NOT_STARTED | DEVICE_TEST_PENDING | Binary framing not implemented |
 | S5 | Mac capture and encode | NOT_STARTED | DEVICE_TEST_PENDING | JPEG worker remains |
@@ -42,3 +42,21 @@ Full verification:
 - Benchmark: `NOT_RUN` by verifier design.
 
 Independent review found that Gradle did not track fixture changes, artifact checks missed Swift/Gradle output directories, Python optimization could disable fixture assertions, and this record still had placeholders. The harness now declares `Fixtures/` as a Gradle input, checks all known build directories, uses explicit Python failures, and records the completed gate. No device behavior was claimed.
+
+## S2 bounded control session
+
+Changed files: shared control/session core types and tests, canonical control fixtures, Mac `SessionClient`, Android `AdbLoopbackServer`, module dependencies, protocol documentation, and static legacy checks.
+
+Test-first result: Swift and Kotlin test compilation failed because control framing, replay, state, backoff, negotiation, geometry, and queue types did not exist. After implementation, focused Swift and Kotlin core tests passed. One Swift fragmented-frame test exposed nonzero `Data` indices after removal; normalizing the remaining buffer fixed the crash.
+
+Verification:
+
+- `swift test --no-parallel`: PASS, 11 tests.
+- `swift build` and `swift build -c release`: PASS.
+- `./gradlew :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`: PASS. Kotlin core has 10 tests. App unit tests remain `NO-SOURCE` until app-specific state tests are added.
+- `./scripts/verify-no-device.sh`: PASS after the final trust-race change.
+- Canonical fixtures, registered legacy paths, repository artifacts, tracked secret paths, and diff whitespace checks: PASS.
+
+Independent protocol review found and then rechecked timestamp incompatibility, stale replay, socket replacement races, reconnect resets, pre-handshake connected state, sequence ordering, maximum-frame concatenation, legacy mismatch reporting, UUID and geometry differences, pre-trust clipboard disclosure, handshake ordering, and reconnect-time clipboard races. The implementation now uses a four-message nonce handshake, exact confirmation ID echo, per-socket generation, serialized Android sequence/write assignment, strict trust gates on both peers, and generation-bound Mac clipboard sends. The final narrow review reported no remaining trust race.
+
+Physical pairing, reconnect, LAN, and USB behavior remain `DEVICE_TEST_PENDING`. Session tokens and nonces do not provide transport encryption.

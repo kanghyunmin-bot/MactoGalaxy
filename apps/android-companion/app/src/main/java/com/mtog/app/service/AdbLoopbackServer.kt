@@ -9,28 +9,30 @@ import com.mtog.app.input.RemoteInputBridge
 import com.mtog.app.input.RemoteKeyboardBridge
 import com.mtog.app.pairing.PairingStore
 import com.mtog.app.session.DeviceIdentityStore
-import com.mtog.app.session.SessionCodec
-import com.mtog.app.session.SessionEnvelope
-import com.mtog.app.session.SessionMessageType
-import com.mtog.app.session.SessionReplayGuard
 import com.mtog.app.session.SessionRuntime
+import com.mtog.core.BoundedFrameParser
+import com.mtog.core.ControlFrameCodec
+import com.mtog.core.ControlProtocolException
+import com.mtog.core.ProtocolLimits
+import com.mtog.core.SessionEnvelope
+import com.mtog.core.SessionMessageType
+import com.mtog.core.SessionReplayGuard
 import com.mtog.app.transport.WirelessServiceAdvertiser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
+import java.io.OutputStream
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
+import java.util.UUID
 
 class AdbLoopbackServer(
     private val appContext: Context,
@@ -38,7 +40,6 @@ class AdbLoopbackServer(
 ) {
     companion object {
         const val port: Int = 46001
-        private const val maxFrameCharacters: Int = 48 * 1_024 * 1_024
     }
 
     private val deviceId: String by lazy { DeviceIdentityStore.getOrCreateDeviceId(appContext) }
@@ -51,10 +52,15 @@ class AdbLoopbackServer(
     private var acceptJob: Job? = null
     private var clientJob: Job? = null
     private var clientSocket: Socket? = null
-    private var outboundWriter: BufferedWriter? = null
+    private var outboundStream: OutputStream? = null
     private val writerLock = Any()
     private val replayGuard = SessionReplayGuard()
     private var activeSessionId: String? = null
+    private var activeSessionToken: String? = null
+    private var activeClientNonce: String? = null
+    private var connectionGeneration: Long = 0
+    private var serverNonce: String = ""
+    private var handshakeConfirmed = false
     private var activePeerTrusted = false
     private var outboundSequenceNo: Long = 0
 
@@ -97,8 +103,11 @@ class AdbLoopbackServer(
         closeClient(clientSocket)
         clipboardSyncManager.stop()
         wirelessAdvertiser.stop()
-        outboundWriter = null
+        outboundStream = null
         activeSessionId = null
+        activeSessionToken = null
+        activeClientNonce = null
+        handshakeConfirmed = false
         activePeerTrusted = false
         outboundSequenceNo = 0
         replayGuard.reset()
@@ -122,21 +131,28 @@ class AdbLoopbackServer(
         return accepted
     }
 
-    private fun attachClient(socket: Socket) {
+    private suspend fun attachClient(socket: Socket) {
         val previousJob = clientJob
         val previousSocket = clientSocket
 
         previousJob?.cancel()
         closeClient(previousSocket)
+        previousJob?.cancelAndJoin()
 
         activeSessionId = null
+        activeSessionToken = null
+        activeClientNonce = null
+        handshakeConfirmed = false
         activePeerTrusted = false
         outboundSequenceNo = 0
+        connectionGeneration += 1
+        val generation = connectionGeneration
+        serverNonce = UUID.randomUUID().toString()
         replayGuard.reset()
         clientSocket = socket
         clientJob = scope.launch(Dispatchers.IO) {
             try {
-                handleClient(socket)
+                handleClient(socket, generation)
             } catch (_: SocketException) {
                 if (scope.isActive) {
                     SessionRuntime.markDisconnected()
@@ -153,34 +169,82 @@ class AdbLoopbackServer(
         return DisplayGeometry.currentWidth(appContext) to DisplayGeometry.currentHeight(appContext)
     }
 
-    private suspend fun handleClient(socket: Socket) {
+    private suspend fun handleClient(socket: Socket, generation: Long) {
         try {
-            val reader = BufferedReader(InputStreamReader(socket.getInputStream(), Charsets.UTF_8))
-            val writer = BufferedWriter(OutputStreamWriter(socket.getOutputStream(), Charsets.UTF_8))
+            val input = socket.getInputStream()
+            val writer = socket.getOutputStream()
+            val parser = BoundedFrameParser()
+            val readBuffer = ByteArray(4_096)
             if (clientSocket === socket) {
-                outboundWriter = writer
+                outboundStream = writer
             }
 
             while (scope.isActive) {
-                val line = withContext(Dispatchers.IO) { reader.readLine() } ?: break
-                if (line.length > maxFrameCharacters) {
-                    SessionRuntime.markError("너무 큰 수신 메시지를 거절했습니다")
-                    break
-                }
-                val inbound = SessionCodec.decodeLine(line)
-                if (activeSessionId == null) {
-                    activeSessionId = inbound.sessionId
-                }
-                if (inbound.sessionId != activeSessionId) {
-                    SessionRuntime.markError("예상하지 못한 세션의 메시지를 거절했습니다: ${inbound.sessionId}")
-                    continue
-                }
-                if (!replayGuard.accept(inbound)) {
-                    PairingStore.markStatus("오래되었거나 재전송된 메시지를 무시했습니다")
-                    continue
-                }
-                SessionRuntime.markConnected(inbound.deviceName.ifBlank { "Mac 제어기" })
-                SessionRuntime.markInbound(inbound.type.wireName)
+                val count = withContext(Dispatchers.IO) { input.read(readBuffer) }
+                if (count < 0) break
+                val frames = parser.append(readBuffer.copyOf(count))
+                for (frame in frames) {
+                    val inbound = ControlFrameCodec.decode(frame)
+                    val token = inbound.payload["sessionToken"].orEmpty()
+                    val clientNonce = inbound.payload["clientNonce"].orEmpty()
+                    val inboundServerNonce = inbound.payload["serverNonce"].orEmpty()
+                    if (activeSessionId == null) {
+                        if (inbound.type != SessionMessageType.Hello ||
+                            inbound.payload["protocolVersion"] != ProtocolLimits.VERSION.toString() ||
+                            token.isBlank() || clientNonce.isBlank() || inboundServerNonce.isNotEmpty()
+                        ) {
+                            throw ControlProtocolException.InvalidJson
+                        }
+                        activeSessionId = inbound.sessionId
+                        activeSessionToken = token
+                        activeClientNonce = clientNonce
+                        replayGuard.begin(inbound.sessionId, token, clientNonce, serverNonce, generation)
+                    } else if (inbound.type == SessionMessageType.Hello ||
+                        clientNonce != activeClientNonce || inboundServerNonce != serverNonce
+                    ) {
+                        SessionRuntime.markError("예상하지 못한 세션의 메시지를 거절했습니다")
+                        continue
+                    }
+                    if (inbound.sessionId != activeSessionId || token != activeSessionToken) {
+                        SessionRuntime.markError("예상하지 못한 세션의 메시지를 거절했습니다")
+                        continue
+                    }
+                    if (!replayGuard.accept(
+                            inbound.sessionId,
+                            token,
+                            activeClientNonce.orEmpty(),
+                            serverNonce,
+                            inbound.sequenceNo,
+                            generation
+                        )
+                    ) {
+                        PairingStore.markStatus("오래되었거나 재전송된 메시지를 무시했습니다")
+                        continue
+                    }
+                    SessionRuntime.markInbound(inbound.type.wireName)
+
+                    if (handshakeConfirmed && inbound.type in setOf(
+                            SessionMessageType.Hello,
+                            SessionMessageType.HelloAck,
+                            SessionMessageType.HelloConfirm,
+                            SessionMessageType.HelloConfirmed
+                        )
+                    ) {
+                        throw ControlProtocolException.InvalidJson
+                    }
+                    if (!handshakeConfirmed &&
+                        inbound.type != SessionMessageType.Hello &&
+                        inbound.type != SessionMessageType.HelloConfirm
+                    ) {
+                        send(
+                            writer,
+                            buildEnvelope(
+                                type = SessionMessageType.Error,
+                                payload = mapOf("code" to "handshake_required")
+                            )
+                        )
+                        continue
+                    }
 
                 if (requiresTrustedPeer(inbound.type) && !activePeerTrusted) {
                     PairingStore.markStatus("먼저 이 Mac을 페어링하고 신뢰해야 합니다: ${inbound.type.wireName}")
@@ -226,6 +290,9 @@ class AdbLoopbackServer(
                                 type = SessionMessageType.HelloAck,
                                 payload = mapOf(
                                     "role" to "android-companion",
+                                    "protocolVersion" to ProtocolLimits.VERSION.toString(),
+                                    "clientNonce" to inbound.payload["clientNonce"].orEmpty(),
+                                    "serverNonce" to serverNonce,
                                     "transport" to "usb-adb-dev",
                                     "transportCandidates" to "usb-adb-dev,usb-aoa-candidate,secure-lan-candidate",
                                     "clipboardKinds" to "text,image,video,file",
@@ -238,7 +305,22 @@ class AdbLoopbackServer(
                                 )
                             )
                         )
-                        clipboardSyncManager.currentPayload()?.let { payload ->
+                    }
+
+                    SessionMessageType.HelloConfirm -> {
+                        handshakeConfirmed = true
+                        SessionRuntime.markConnected(inbound.deviceName.ifBlank { "Mac 제어기" })
+                        send(
+                            writer,
+                            buildEnvelope(
+                                type = SessionMessageType.HelloConfirmed,
+                                payload = mapOf(
+                                    "protocolVersion" to ProtocolLimits.VERSION.toString(),
+                                    "replyTo" to inbound.id
+                                )
+                            )
+                        )
+                        if (activePeerTrusted) clipboardSyncManager.currentPayload()?.let { payload ->
                             send(
                                 writer,
                                 buildEnvelope(
@@ -526,20 +608,24 @@ class AdbLoopbackServer(
                     }
 
                     else -> Unit
+                    }
                 }
             }
+            parser.finish()
             if (clientSocket === socket) {
                 SessionRuntime.markDisconnected()
             }
         } catch (_: SocketException) {
             // Expected when the previous client is replaced or the adb tunnel closes.
+        } catch (error: ControlProtocolException.UnsupportedVersion) {
+            SessionRuntime.markError("프로토콜 버전이 맞지 않습니다: ${error.version}")
         } catch (error: Exception) {
             if (scope.isActive) {
                 SessionRuntime.markError("연결 세션이 종료되었습니다: ${error.message ?: "알 수 없음"}")
             }
         } finally {
             if (clientSocket === socket) {
-                outboundWriter = null
+                outboundStream = null
                 clientSocket = null
                 SessionRuntime.markDisconnected()
             }
@@ -548,16 +634,15 @@ class AdbLoopbackServer(
     }
 
     private suspend fun send(
-        writer: BufferedWriter,
+        writer: OutputStream,
         message: SessionEnvelope
     ) {
         withContext(Dispatchers.IO) {
-            val encoded = String(SessionCodec.encodeLine(message), Charsets.UTF_8)
-            if (encoded.length > maxFrameCharacters) {
-                SessionRuntime.markError("너무 큰 송신 메시지를 거절했습니다")
-                return@withContext
-            }
             synchronized(writerLock) {
+                outboundSequenceNo += 1
+                val encoded = ControlFrameCodec.encode(
+                    message.copy(sequenceNo = outboundSequenceNo)
+                )
                 writer.write(encoded)
                 writer.flush()
             }
@@ -566,12 +651,12 @@ class AdbLoopbackServer(
     }
 
     private fun handleLocalClipboardPayload(payload: ClipboardTransferPayload): Boolean {
-        val writer = outboundWriter ?: run {
+        val writer = outboundStream ?: run {
             SessionRuntime.markClipboardEvent("Mac 연결 세션을 기다리는 중입니다")
             return false
         }
-        if (!activePeerTrusted) {
-            SessionRuntime.markClipboardEvent("Mac을 신뢰 기기로 등록해야 클립보드를 보낼 수 있습니다")
+        if (!handshakeConfirmed || !activePeerTrusted) {
+            SessionRuntime.markClipboardEvent("신뢰된 Mac 연결이 준비되어야 클립보드를 보낼 수 있습니다")
             return false
         }
         scope.launch(Dispatchers.IO) {
@@ -605,6 +690,8 @@ class AdbLoopbackServer(
         return when (type) {
             SessionMessageType.Hello,
             SessionMessageType.HelloAck,
+            SessionMessageType.HelloConfirm,
+            SessionMessageType.HelloConfirmed,
             SessionMessageType.PairRequest,
             SessionMessageType.PairResult,
             SessionMessageType.Ping,
@@ -661,15 +748,19 @@ class AdbLoopbackServer(
         payload: Map<String, String> = emptyMap(),
         requiresAck: Boolean = false
     ): SessionEnvelope {
-        outboundSequenceNo += 1
+        val boundPayload = payload + mapOf(
+            "sessionToken" to activeSessionToken.orEmpty(),
+            "clientNonce" to activeClientNonce.orEmpty(),
+            "serverNonce" to serverNonce
+        )
         return SessionEnvelope(
             sessionId = activeSessionId ?: "bootstrap",
-            sequenceNo = outboundSequenceNo,
+            sequenceNo = 0,
             requiresAck = requiresAck,
             type = type,
             deviceId = deviceId,
             deviceName = deviceName,
-            payload = payload
+            payload = boundPayload
         )
     }
 
