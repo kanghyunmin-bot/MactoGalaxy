@@ -12,6 +12,7 @@ public enum VideoControlCode: UInt8, Sendable {
     case streamStart = 2
     case streamStop = 3
     case capabilities = 4
+    case fallbackH264 = 5
 }
 
 public struct VideoPacket: Equatable, Sendable {

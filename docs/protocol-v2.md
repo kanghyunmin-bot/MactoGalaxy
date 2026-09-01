@@ -53,7 +53,7 @@ The video header is 64 bytes. Integers use network byte order.
 | 52 | 1 | Control code |
 | 53 | 11 | Reserved zero bytes |
 
-Access-unit payloads are limited to 8 MiB, codec configuration to 256 KiB, and control payloads to 64 KiB. Dimensions are positive and at most 8192. Payloads are raw Annex-B NAL bytes, not JSON or Base64. Config packets contain codec parameter sets and are distinct from access units. Control codes include keyframe request, stream start, stream stop, and capabilities.
+Access-unit payloads are limited to 8 MiB, codec configuration to 256 KiB, and control payloads to 64 KiB. Dimensions are positive and at most 8192. Payloads are raw Annex-B NAL bytes, not JSON or Base64. Config packets contain codec parameter sets and are distinct from access units. Control codes include keyframe request, stream start, stream stop, capabilities, and one H.264 fallback request. Android sends capabilities before Mac encoding starts; later recovery controls travel back over the same socket.
 
 The receiver requires config before decoding and a keyframe after config, reconnect, or any undecoded queue eviction. Recovery clears only when a newer keyframe from the affected session is decoded. It rejects stale sessions and non-increasing sequences. HEVC can fall back to H.264 once. The latest-frame queue has an explicit capacity and marks keyframe recovery after any undecoded frame eviction.
 

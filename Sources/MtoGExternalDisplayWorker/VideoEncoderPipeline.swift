@@ -6,6 +6,7 @@ import MtoGMedia
 final class VideoEncoderPipeline {
     private let encoder: RealtimeVideoEncoder
     private let framesPerSecond: Int
+    private var forceNextKeyframe = false
 
     init(
         codec: VideoCodec,
@@ -28,8 +29,14 @@ final class VideoEncoderPipeline {
         try encoder.encode(
             frame.pixelBuffer,
             presentationTimeUs: frame.presentationTimeUs,
-            framesPerSecond: framesPerSecond
+            framesPerSecond: framesPerSecond,
+            forceKeyframe: forceNextKeyframe
         )
+        forceNextKeyframe = false
+    }
+
+    func requestKeyframe() {
+        forceNextKeyframe = true
     }
 
     func complete() throws {

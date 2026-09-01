@@ -30,73 +30,73 @@ final class ExternalDisplayWorker: @unchecked Sendable {
             let displayID = try backend.create()
             try touch.start(displayID: displayID)
 
-            let receiverCapabilities = configuredReceiverCapabilities()
+            let streamSender = VideoStreamSender(port: videoPort, codec: .h264, width: width, height: height)
+            sender = streamSender
+            try streamSender.connect(timeoutSeconds: 6)
+            let receiverCapabilities = try streamSender.receiveCapabilities(timeoutSeconds: 5)
             let localCapabilities = CodecCapabilities(
                 codecs: availableHardwareCodecs(),
                 maxWidth: width,
                 maxHeight: height,
                 maxFramesPerSecond: framesPerSecond
             )
-            var negotiated = try CodecNegotiator.negotiate(
-                sender: localCapabilities,
-                receiver: receiverCapabilities
-            )
-            let relay = EncoderOutputRelay()
-            do {
-                encoder = try makeEncoder(codec: negotiated.codec, relay: relay)
-            } catch {
-                guard negotiated.codec == .hevc,
-                      localCapabilities.codecs.contains(.h264),
-                      receiverCapabilities.codecs.contains(.h264) else { throw error }
-                negotiated = try CodecNegotiator.negotiate(
-                    sender: CodecCapabilities(
-                        codecs: [.h264],
-                        maxWidth: negotiated.width,
-                        maxHeight: negotiated.height,
-                        maxFramesPerSecond: negotiated.framesPerSecond
-                    ),
-                    receiver: receiverCapabilities
-                )
-                encoder = try makeEncoder(codec: .h264, relay: relay)
-            }
-            guard let encoder else { throw WorkerError.encodeFailed("encoder unavailable") }
-
-            let streamSender = VideoStreamSender(
-                port: videoPort,
+            var negotiated = try CodecNegotiator.negotiate(sender: localCapabilities, receiver: receiverCapabilities)
+            streamSender.update(
                 codec: negotiated.codec,
                 width: negotiated.width,
                 height: negotiated.height
             )
-            sender = streamSender
-            try streamSender.connect(timeoutSeconds: 6)
-            let framePump = EncodedFramePump(sender: streamSender) { [runState] error in
-                runState.fail(error)
-            }
+
+            let relay = EncoderOutputRelay()
+            let framePump = EncodedFramePump(sender: streamSender) { [runState] error in runState.fail(error) }
             pump = framePump
             relay.setHandler { result in framePump.submit(result) }
+            do {
+                encoder = try makeEncoder(codec: negotiated.codec, negotiated: negotiated, relay: relay)
+            } catch {
+                guard negotiated.codec == .hevc,
+                      localCapabilities.codecs.contains(.h264),
+                      receiverCapabilities.codecs.contains(.h264) else { throw error }
+                negotiated = try h264Negotiation(local: localCapabilities, receiver: receiverCapabilities)
+                streamSender.update(codec: .h264, width: negotiated.width, height: negotiated.height)
+                encoder = try makeEncoder(codec: .h264, negotiated: negotiated, relay: relay)
+            }
+            guard var activeEncoder = encoder else { throw WorkerError.encodeFailed("encoder unavailable") }
 
+            streamSender.startControlReader { [runState] code in
+                switch code {
+                case .requestKeyframe: runState.requestKeyframe()
+                case .fallbackH264: runState.requestH264Fallback()
+                default: break
+                }
+            }
             try capture.start(
                 displayID: displayID,
                 width: negotiated.width,
                 height: negotiated.height,
                 framesPerSecond: negotiated.framesPerSecond
             )
-            workerStatus(
-                "Galaxy external display streaming \(negotiated.codec.rawValue) " +
-                "\(negotiated.width)x\(negotiated.height) at target \(negotiated.framesPerSecond) fps"
-            )
+            reportStreaming(negotiated)
+
             while runState.isRunning {
-                guard let frame = capture.queue.take(timeout: 0.1) else { continue }
-                do {
-                    try encoder.encode(frame)
-                } catch {
-                    runState.fail(error)
+                if runState.takeFallbackRequest(), negotiated.codec == .hevc {
+                    try activeEncoder.complete()
+                    framePump.finish()
+                    activeEncoder.invalidate()
+                    negotiated = try h264Negotiation(local: localCapabilities, receiver: receiverCapabilities)
+                    streamSender.update(codec: .h264, width: negotiated.width, height: negotiated.height)
+                    activeEncoder = try makeEncoder(codec: .h264, negotiated: negotiated, relay: relay)
+                    encoder = activeEncoder
+                    reportStreaming(negotiated)
                 }
+                if runState.takeKeyframeRequest() { activeEncoder.requestKeyframe() }
+                guard let frame = capture.queue.take(timeout: 0.1) else { continue }
+                do { try activeEncoder.encode(frame) } catch { runState.fail(error) }
             }
             if let failure = runState.failure { throw failure }
             shutdown(
                 capture: capture,
-                encoder: encoder,
+                encoder: activeEncoder,
                 pump: framePump,
                 sender: streamSender,
                 touch: touch,
@@ -119,12 +119,16 @@ final class ExternalDisplayWorker: @unchecked Sendable {
         }
     }
 
-    private func makeEncoder(codec: VideoCodec, relay: EncoderOutputRelay) throws -> VideoEncoderPipeline {
+    private func makeEncoder(
+        codec: VideoCodec,
+        negotiated: NegotiatedCodec,
+        relay: EncoderOutputRelay
+    ) throws -> VideoEncoderPipeline {
         try VideoEncoderPipeline(
             codec: codec,
-            width: width,
-            height: height,
-            framesPerSecond: framesPerSecond
+            width: negotiated.width,
+            height: negotiated.height,
+            framesPerSecond: negotiated.framesPerSecond
         ) { result in relay.submit(result) }
     }
 
@@ -134,14 +138,25 @@ final class ExternalDisplayWorker: @unchecked Sendable {
         }
     }
 
-    private func configuredReceiverCapabilities() -> CodecCapabilities {
-        let value = ProcessInfo.processInfo.environment["MTOG_RECEIVER_VIDEO_CODECS"] ?? "h264"
-        let codecs = value.split(separator: ",").compactMap { VideoCodec(rawValue: String($0)) }
-        return CodecCapabilities(
-            codecs: codecs.isEmpty ? [.h264] : codecs,
-            maxWidth: width,
-            maxHeight: height,
-            maxFramesPerSecond: framesPerSecond
+    private func h264Negotiation(
+        local: CodecCapabilities,
+        receiver: CodecCapabilities
+    ) throws -> NegotiatedCodec {
+        try CodecNegotiator.negotiate(
+            sender: CodecCapabilities(
+                codecs: local.codecs.contains(.h264) ? [.h264] : [],
+                maxWidth: local.maxWidth,
+                maxHeight: local.maxHeight,
+                maxFramesPerSecond: local.maxFramesPerSecond
+            ),
+            receiver: receiver
+        )
+    }
+
+    private func reportStreaming(_ negotiated: NegotiatedCodec) {
+        workerStatus(
+            "Galaxy external display streaming \(negotiated.codec.rawValue) " +
+            "\(negotiated.width)x\(negotiated.height) at target \(negotiated.framesPerSecond) fps"
         )
     }
 
@@ -191,6 +206,9 @@ private final class WorkerRunState: @unchecked Sendable {
     private let lock = NSLock()
     private var running = true
     private var storedFailure: Error?
+    private var keyframeRequested = false
+    private var fallbackRequested = false
+    private var fallbackUsed = false
 
     var isRunning: Bool {
         lock.lock(); defer { lock.unlock() }
@@ -211,5 +229,32 @@ private final class WorkerRunState: @unchecked Sendable {
         if storedFailure == nil { storedFailure = error }
         running = false
         lock.unlock()
+    }
+
+    func requestKeyframe() {
+        lock.lock(); keyframeRequested = true; lock.unlock()
+    }
+
+    func takeKeyframeRequest() -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        let value = keyframeRequested
+        keyframeRequested = false
+        return value
+    }
+
+    func requestH264Fallback() {
+        lock.lock()
+        if !fallbackUsed {
+            fallbackRequested = true
+            fallbackUsed = true
+        }
+        lock.unlock()
+    }
+
+    func takeFallbackRequest() -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        let value = fallbackRequested
+        fallbackRequested = false
+        return value
     }
 }

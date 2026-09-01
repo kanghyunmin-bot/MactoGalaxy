@@ -5,14 +5,18 @@ import MtoGMedia
 
 final class VideoStreamSender: @unchecked Sendable {
     private let port: UInt16
-    private let codec: VideoCodec
-    private let width: Int
-    private let height: Int
+    private var codec: VideoCodec
+    private var width: Int
+    private var height: Int
     private let sessionID = UUID()
     private var sequence: UInt64 = 0
     private var socketFD: Int32 = -1
     private var sentConfig = false
     private let lock = NSLock()
+    private let controlStateLock = NSLock()
+    private var controlThread: Thread?
+    private var controlFinished: DispatchSemaphore?
+    private var readingControls = false
 
     init(port: UInt16, codec: VideoCodec, width: Int, height: Int) {
         self.port = port
@@ -36,6 +40,42 @@ final class VideoStreamSender: @unchecked Sendable {
         throw WorkerError.socketConnectFailed(reason)
     }
 
+    func receiveCapabilities(timeoutSeconds: TimeInterval) throws -> CodecCapabilities {
+        let deadline = Date().addingTimeInterval(timeoutSeconds)
+        let parser = BoundedVideoParser()
+        var bytes = [UInt8](repeating: 0, count: 4096)
+        while Date() < deadline {
+            let count = Darwin.recv(socketFD, &bytes, bytes.count, 0)
+            if count < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) { continue }
+            guard count > 0 else { throw WorkerError.streamDisconnected }
+            for packet in try parser.append(Data(bytes.prefix(count))) {
+                guard packet.kind == .control, packet.controlCode == .capabilities else { continue }
+                return try decodeCapabilities(packet.payload)
+            }
+        }
+        throw WorkerError.socketConnectFailed("receiver capabilities timed out")
+    }
+
+    func startControlReader(_ handler: @escaping @Sendable (VideoControlCode) -> Void) {
+        controlStateLock.lock(); readingControls = true; controlStateLock.unlock()
+        let finished = DispatchSemaphore(value: 0)
+        let thread = Thread { [weak self] in
+            defer { finished.signal() }
+            self?.controlLoop(handler: handler)
+        }
+        controlFinished = finished
+        controlThread = thread
+        thread.start()
+    }
+
+    func update(codec: VideoCodec, width: Int, height: Int) {
+        lock.lock(); defer { lock.unlock() }
+        self.codec = codec
+        self.width = width
+        self.height = height
+        sentConfig = false
+    }
+
     func send(_ frame: RealtimeEncodedFrame) throws {
         lock.lock(); defer { lock.unlock() }
         if !sentConfig {
@@ -52,17 +92,45 @@ final class VideoStreamSender: @unchecked Sendable {
     }
 
     func close() {
-        lock.lock(); defer { lock.unlock() }
+        controlStateLock.lock(); readingControls = false; controlStateLock.unlock()
+        lock.lock()
         if socketFD >= 0 {
             Darwin.shutdown(socketFD, SHUT_RDWR)
             Darwin.close(socketFD)
             socketFD = -1
         }
+        lock.unlock()
+        controlFinished?.wait()
+        controlThread = nil
+        controlFinished = nil
+    }
+
+    private var isReadingControls: Bool {
+        controlStateLock.lock(); defer { controlStateLock.unlock() }
+        return readingControls
+    }
+
+    private func controlLoop(handler: @escaping @Sendable (VideoControlCode) -> Void) {
+        let parser = BoundedVideoParser()
+        var bytes = [UInt8](repeating: 0, count: 4096)
+        while isReadingControls {
+            let count = Darwin.recv(socketFD, &bytes, bytes.count, 0)
+            if count < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) { continue }
+            if count <= 0 { return }
+            do {
+                for packet in try parser.append(Data(bytes.prefix(count))) {
+                    guard packet.kind == .control, packet.sessionID == sessionID else { continue }
+                    handler(packet.controlCode)
+                }
+            } catch {
+                return
+            }
+        }
     }
 
     private func sendPacket(kind: VideoPacketKind, flags: UInt8, timestamp: UInt64, payload: Data) throws {
         sequence += 1
-        let packet = VideoPacket(
+        try writeAll(VideoPacketCodec.encode(VideoPacket(
             kind: kind,
             codec: codec,
             flags: flags,
@@ -72,8 +140,23 @@ final class VideoStreamSender: @unchecked Sendable {
             width: width,
             height: height,
             payload: payload
-        )
-        try writeAll(VideoPacketCodec.encode(packet))
+        )))
+    }
+
+    private func decodeCapabilities(_ payload: Data) throws -> CodecCapabilities {
+        guard payload.count == 11 else { throw WorkerError.socketConnectFailed("invalid capability payload") }
+        let mask = payload[0]
+        var codecs: [VideoCodec] = []
+        if mask & 2 != 0 { codecs.append(.hevc) }
+        if mask & 1 != 0 { codecs.append(.h264) }
+        let width = readUInt32(payload, 1)
+        let height = readUInt32(payload, 5)
+        let fps = Int(payload[9]) << 8 | Int(payload[10])
+        return CodecCapabilities(codecs: codecs, maxWidth: width, maxHeight: height, maxFramesPerSecond: fps)
+    }
+
+    private func readUInt32(_ data: Data, _ offset: Int) -> Int {
+        Int(data[offset]) << 24 | Int(data[offset + 1]) << 16 | Int(data[offset + 2]) << 8 | Int(data[offset + 3])
     }
 
     private func openSocket() throws -> Int32 {
@@ -81,8 +164,9 @@ final class VideoStreamSender: @unchecked Sendable {
         guard fd >= 0 else { throw WorkerError.socketConnectFailed(String(cString: strerror(errno))) }
         var noSigpipe: Int32 = 1
         setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, socklen_t(MemoryLayout<Int32>.size))
-        var sendTimeout = timeval(tv_sec: 1, tv_usec: 0)
-        setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &sendTimeout, socklen_t(MemoryLayout<timeval>.size))
+        var timeout = timeval(tv_sec: 1, tv_usec: 0)
+        setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
+        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
         var address = sockaddr_in()
         address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
         address.sin_family = sa_family_t(AF_INET)

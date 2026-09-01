@@ -17,7 +17,7 @@ The tracked baseline was clean. Swift 6.3.3 debug build passed. macOS Java looku
 | S3 | Automatic text/URL clipboard | PASS | BLOCKED | Production standalone shell authority is not verified |
 | S4 | Video protocol and synthetic transport | PASS | DEVICE_TEST_PENDING | VideoToolbox and MediaCodec are not part of this slice |
 | S5 | Mac capture and encode | PASS | DEVICE_TEST_PENDING | Private display creation and capture permission require hardware validation |
-| S6 | Android decode and Surface | NOT_STARTED | DEVICE_TEST_PENDING | Bitmap decode remains |
+| S6 | Android decode and Surface | PASS | DEVICE_TEST_PENDING | Rendered MediaCodec output requires a device or emulator |
 | S7 | Session, input, and ADB serial integration | NOT_STARTED | DEVICE_TEST_PENDING | Commands can select arbitrary devices |
 | S8 | Simplified UI | NOT_STARTED | DEVICE_TEST_PENDING | Current UI and combined state remain |
 | S9 | Legacy removal and final verification | NOT_STARTED | DEVICE_TEST_PENDING | Final static checks not registered |
@@ -112,3 +112,20 @@ Verification:
 The worker uses a latest-frame ScreenCaptureKit callback queue, a separate encode loop, a latest-only encoded pump, and a one-second socket send timeout. Bitrate is resolution-based and capped at 40 Mbps with a data-rate window. Receiver capability negotiation defaults to H.264 until capabilities are supplied and permits one hardware HEVC-to-H.264 fallback. VideoToolbox frame drops are nonfatal. Shutdown stops capture, completes compression, drains bounded output, closes video/input sockets, joins touch input, releases the display, and removes ADB mappings.
 
 Independent review found unbounded output, blocking shutdown, unbounded bitrate, fatal normal frame drops, missing receiver negotiation/fallback, unjoined touch input, stopped-queue retention, and config/keyframe backpressure races. All were fixed and the final narrow review reported no findings. Private display creation and real ScreenCaptureKit permission remain `DEVICE_TEST_PENDING`.
+
+## S6 Android decode and Surface
+
+Changed files: thin external display Activity, MTGV socket receiver, MediaCodec decoder, decoder state machine, capability reader, ViewModel diagnostics, SurfaceView Compose host, extracted touch controller, streaming notification state, app unit and instrumentation tests, static checks, and architecture/progress documents.
+
+Test-first result: app unit-test compilation failed because decoder states and commands did not exist. Three pure lifecycle tests now cover frame-before-config, Surface availability/loss, config and session changes, keyframe recovery, duplicates, stop, and one HEVC-to-H.264 fallback request.
+
+Verification:
+
+- `./gradlew :app:testDebugUnitTest`: PASS, three decoder state tests.
+- `./gradlew :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug`: PASS.
+- `./scripts/verify-no-device.sh`: PASS with instrumentation source compilation included.
+- Static search finds no Bitmap/JPEG/legacy framing in the external display Activity or package.
+
+Socket parsing and MediaCodec feeding run on IO dispatchers. Compose hosts an aspect-fit SurfaceView and only observes diagnostics. Android advertises queried decoder size/rate capabilities over the video socket. It sends keyframe and one H.264 fallback request back to the worker. The Mac forces a keyframe or reconfigures its hardware encoder in place. Receiver reconnect accepts new clients. Pause/resume uses ordered generations and retains replacement config. MediaCodec input backpressure requests recovery. Streaming state and notification begin only from the active decoder generation’s frame-rendered callback. Diagnostics reset on config and disconnect.
+
+Independent review found ineffective negotiation/recovery, one-shot receive, input-buffer drops, stale diagnostics, early notification, missing pause/resume, aspect/touch mismatch, codec leaks, fixed capability claims, fallback races, and stale render callbacks. All were fixed, and the final narrow review reported no findings. Actual H.264/HEVC decode, rendered Surface output, rotation, and instrumentation execution remain `DEVICE_TEST_PENDING`.

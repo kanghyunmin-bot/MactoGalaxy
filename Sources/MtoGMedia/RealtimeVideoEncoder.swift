@@ -72,14 +72,21 @@ public final class RealtimeVideoEncoder: @unchecked Sendable {
         }
     }
 
-    public func encode(_ pixelBuffer: CVPixelBuffer, presentationTimeUs: UInt64, framesPerSecond: Int) throws {
+    public func encode(
+        _ pixelBuffer: CVPixelBuffer,
+        presentationTimeUs: UInt64,
+        framesPerSecond: Int,
+        forceKeyframe: Bool = false
+    ) throws {
         var flags = VTEncodeInfoFlags()
         let status = VTCompressionSessionEncodeFrame(
             session,
             imageBuffer: pixelBuffer,
             presentationTimeStamp: CMTime(value: Int64(presentationTimeUs), timescale: 1_000_000),
             duration: CMTime(value: 1, timescale: CMTimeScale(framesPerSecond)),
-            frameProperties: nil,
+            frameProperties: forceKeyframe
+                ? [kVTEncodeFrameOptionKey_ForceKeyFrame as String: true] as CFDictionary
+                : nil,
             sourceFrameRefcon: nil,
             infoFlagsOut: &flags
         )

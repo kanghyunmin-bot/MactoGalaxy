@@ -58,4 +58,13 @@ fi
 grep -q '^import ScreenCaptureKit$' Sources/MtoGExternalDisplayWorker/ScreenCaptureSource.swift
 grep -q '^import VideoToolbox$' Sources/MtoGMedia/RealtimeVideoEncoder.swift
 
+if grep -R -E 'BitmapFactory|decodeByteArray|MTOGVD1|"FRAM"|JPEG|jpeg' \
+    apps/android-companion/app/src/main/java/com/mtog/app/ExternalDisplayActivity.kt \
+    apps/android-companion/app/src/main/java/com/mtog/app/externaldisplay >/dev/null; then
+    echo "legacy Android external display path found" >&2
+    exit 1
+fi
+grep -q 'SurfaceView' apps/android-companion/app/src/main/java/com/mtog/app/externaldisplay/ExternalDisplaySurface.kt
+grep -q 'MediaCodec' apps/android-companion/app/src/main/java/com/mtog/app/externaldisplay/MediaCodecVideoDecoder.kt
+
 echo "registered legacy path checks: PASS"

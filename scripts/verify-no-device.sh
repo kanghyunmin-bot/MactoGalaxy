@@ -45,7 +45,7 @@ swift build
 swift build -c release
 
 cd "$ROOT_DIR/apps/android-companion"
-./gradlew :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+./gradlew :core:test :app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug
 
 cd "$ROOT_DIR"
 ./scripts/verify-protocol-fixtures.sh

@@ -10,7 +10,7 @@
 | Mirror and USB bootstrap | Existing app path remains during refactor | DEVICE_TEST_PENDING |
 | Input and AOA HID | Existing app path remains during refactor | DEVICE_TEST_PENDING |
 | Automatic text/URL clipboard | Swift in-memory store/transport round trip plus Swift/Kotlin event, hash, loop, replay, reconnect, UTF-8, URL, and 256 KiB tests | BLOCKED until production shell authority is verified |
-| H.264/HEVC stream | Shared fixtures, parser/state/queue tests, synthetic framing, required hardware H.264 VideoToolbox round trip, and HEVC round trip when available | DEVICE_TEST_PENDING for ScreenCaptureKit virtual display and MediaCodec display |
+| H.264/HEVC stream | Shared fixtures, parser/state/queue tests, VideoToolbox round trips, Android decoder lifecycle tests, MediaCodec/Surface build, and instrumentation source compilation | DEVICE_TEST_PENDING for ScreenCaptureKit virtual display and rendered MediaCodec output |
 | Private virtual display | Build and failure isolation planned in S5 | DEVICE_TEST_PENDING |
 | UI states | Reducer tests and Mac mock-state exercise planned in S8 | Android interaction DEVICE_TEST_PENDING without emulator |
 
