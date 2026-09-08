@@ -33,3 +33,7 @@ ADB currently reports no connected device. Awaiting USB reconnection and user co
 ## Fullscreen follow-up
 
 User confirms installed-app extended display and touch work after permission approval. Fixed absent immersive mode in Android ExternalDisplayActivity. Full no-device suite PASS, replacement APK installed successfully, trusted USB reconnected and installed Mac display restarted. Live tablet window state: navigationBars visible=false; statusBars visible=false. Video SurfaceView bounds [0,0][2960,1848], no navigation bar background or pending-stream overlay in UI hierarchy. This is live layout/system-bar verification; no additional latency or physical touch accuracy claim.
+
+## 0.2.0 release smoke check
+
+Installed the exact universal Mac bundle from the published DMG and updated the tablet to the same source version/build 6 with its existing debug signer. Both include the new icon. Following permission refresh through System Settings, the current Mac process reports capture/accessibility granted and emits HEVC 2560×1600 readiness; tablet UI has the full 2960×1848 Surface and no pending/error overlay. Release APK signature matches the previous published APK. GitHub asset hashes match local artifacts. This is not a new full physical touch or binary-transfer qualification.

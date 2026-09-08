@@ -23,3 +23,9 @@ See [device results](device-runs/2026-09-08/README.md) and [verification matrix]
 Branch khm/release-0.2.0; app version 0.2.0/build 6. Source cleanup retains runtime code, regression tests, fixtures, licenses and focused documentation. Raw local build output and device identifiers are excluded. GitHub upload and installed release smoke checks are in progress.
 
 Release validation: no-device suite PASS (46 Swift tests, Android tests/build/lint and repository checks). Universal Mac DMG built, strict app signature and DMG checksum verified; both arm64/x86_64 slices present. Release APK signature verified and matches v0.1.3 signer. Both installed apps updated to 0.2.0/build 6 with icons; tablet retains debug signer and data. Installed Mac dashboard and trusted USB connection work; capture/accessibility require user regrant after the release signature changed. Release-package hardware display validation remains pending that grant. GitHub publication follows these checks.
+
+## Publication complete
+
+Published [v0.2.0](https://github.com/kanghyunmin-bot/MactoGalaxy/releases/tag/v0.2.0) as a prerelease with universal DMG, release APK and SHA256SUMS.txt. GitHub asset digests match local files. PR #1 squash-merged to main (06e784a); source tree matches the validated build tree.
+
+After standard macOS permission re-registration, the installed release reports capture and accessibility granted, reconnects to the trusted Galaxy, and starts HEVC 2560×1600. The tablet UI shows only its fullscreen 2960×1848 video Surface with no pending/error overlay. This smoke check does not expand the earlier latency, physical touch or binary-transfer qualification. Tablet uses the corresponding 0.2.0 debug build to preserve existing data; distributable APK uses the existing v0.1.3 release certificate.
