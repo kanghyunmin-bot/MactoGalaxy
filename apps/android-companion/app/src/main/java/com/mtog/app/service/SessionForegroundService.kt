@@ -24,6 +24,8 @@ class SessionForegroundService : Service() {
         const val actionStart = "com.mtog.app.service.START"
         const val actionStop = "com.mtog.app.service.STOP"
         const val actionSyncClipboard = "com.mtog.app.service.SYNC_CLIPBOARD"
+        const val actionStartStreaming = "com.mtog.app.service.START_STREAMING"
+        const val actionStopStreaming = "com.mtog.app.service.STOP_STREAMING"
 
         private const val channelId = "mtog_session"
         private const val notificationId = 46001
@@ -37,6 +39,8 @@ class SessionForegroundService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var adbLoopbackServer: AdbLoopbackServer
+    private var streaming = false
+    private var sessionRequested = false
 
     override fun onCreate() {
         super.onCreate()
@@ -56,10 +60,29 @@ class SessionForegroundService : Service() {
                 return START_NOT_STICKY
             }
             actionSyncClipboard -> {
+                sessionRequested = true
                 startSessionServer()
                 syncClipboardNowInternal()
             }
-            else -> startSessionServer()
+            actionStartStreaming -> {
+                streaming = true
+                startSessionServer()
+            }
+            actionStopStreaming -> {
+                streaming = false
+                if (sessionRequested) {
+                    startSessionServer()
+                } else {
+                    adbLoopbackServer.stop()
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                    return START_NOT_STICKY
+                }
+            }
+            else -> {
+                sessionRequested = true
+                startSessionServer()
+            }
         }
         return START_STICKY
     }
@@ -76,7 +99,7 @@ class SessionForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun startSessionServer() {
-        val notification = buildNotification()
+        val notification = buildNotification(streaming)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(notificationId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         } else {
@@ -90,7 +113,7 @@ class SessionForegroundService : Service() {
         return adbLoopbackServer.syncCurrentClipboard()
     }
 
-    private fun buildNotification(): Notification {
+    private fun buildNotification(streaming: Boolean): Notification {
         val launchIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -110,8 +133,11 @@ class SessionForegroundService : Service() {
 
         val builder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("MtoG 연결 대기 중")
-            .setContentText("Mac이 개인 Wi-Fi 또는 USB로 연결할 수 있습니다. 복사 후 클립보드 동기화를 누르세요.")
+            .setContentTitle(if (streaming) "MtoG 외장 화면 전송 중" else "MtoG 연결 대기 중")
+            .setContentText(
+                if (streaming) "MediaCodec으로 Mac 외장 화면을 표시하고 있습니다."
+                else "Mac이 개인 Wi-Fi 또는 USB로 연결할 수 있습니다."
+            )
             .setContentIntent(pendingIntent)
             .addAction(
                 android.R.drawable.ic_menu_upload,

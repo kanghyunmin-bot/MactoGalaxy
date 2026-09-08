@@ -1,0 +1,7 @@
+{
+  "vectors": [
+    {"containerWidth": 2560, "containerHeight": 1600, "contentWidth": 1920, "contentHeight": 1200, "left": 0, "top": 0, "width": 2560, "height": 1600, "normalizedX": 0.25, "normalizedY": 0.75, "mappedX": 640, "mappedY": 1200},
+    {"containerWidth": 1920, "containerHeight": 1200, "contentWidth": 1920, "contentHeight": 1080, "left": 0, "top": 60, "width": 1920, "height": 1080, "normalizedX": 0.5, "normalizedY": 0.5, "mappedX": 960, "mappedY": 600},
+    {"containerWidth": 1200, "containerHeight": 1920, "contentWidth": 1920, "contentHeight": 1200, "left": 0, "top": 585, "width": 1200, "height": 750, "normalizedX": 1.0, "normalizedY": 0.0, "mappedX": 1200, "mappedY": 585}
+  ]
+}

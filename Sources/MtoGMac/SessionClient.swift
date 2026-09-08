@@ -1,4 +1,5 @@
 import Foundation
+import MtoGCore
 import Network
 
 @MainActor
@@ -25,18 +26,33 @@ final class SessionClient: ObservableObject {
     private var activeRoute: ConnectionRoute = .none
     private var connectionGeneration: UInt64 = 0
     private let queue = DispatchQueue(label: "com.mtog.session-client", qos: .userInitiated)
-    private var receiveBuffer = Data()
+    private let frameParser = BoundedFrameParser()
     private let replayGuard = SessionReplayGuard()
     private var currentSessionId = UUID().uuidString
+    private var currentSessionToken = UUID().uuidString
+    private var localNonce = UUID().uuidString
+    private var remoteNonce = ""
     private var outboundSequenceNo: UInt64 = 0
     private var shouldAutoReconnect = false
     private var reconnectTask: Task<Void, Never>?
     private var heartbeatTask: Task<Void, Never>?
+    private var handshakeTask: Task<Void, Never>?
     private var reconnectAttempt = 0
     private var lastInboundAt: Date?
-    private let maxReceiveBufferBytes = 36 * 1_024 * 1_024
-    private let maxOutboundFrameBytes = 36 * 1_024 * 1_024
-    private let maxReconnectAttempts = 8
+    private let reconnectPolicy = ReconnectPolicy(
+        maxAttempts: 8,
+        baseDelaySeconds: 1,
+        maximumDelaySeconds: 16
+    )
+
+    private enum HandshakePhase {
+        case waitingAck
+        case waitingConfirmation
+        case complete
+    }
+
+    private var handshakePhase = HandshakePhase.waitingAck
+    private var expectedConfirmMessageID: UUID?
 
     private enum ConnectionRoute: Equatable, Sendable {
         case none
@@ -79,6 +95,34 @@ final class SessionClient: ObservableObject {
         self.identity = identity
     }
 
+    private func beginProtocolSession() {
+        currentSessionId = UUID().uuidString
+        currentSessionToken = UUID().uuidString
+        localNonce = UUID().uuidString
+        remoteNonce = ""
+        handshakePhase = .waitingAck
+        expectedConfirmMessageID = nil
+        outboundSequenceNo = 0
+        frameParser.reset()
+        replayGuard.reset()
+    }
+
+    var activeSessionGeneration: UInt64 {
+        connectionGeneration
+    }
+
+    var selectedDeviceSerial: String? {
+        bridge.selectedDeviceSerial
+    }
+
+    var activeProtocolSessionID: UUID? {
+        state == .connected ? UUID(uuidString: currentSessionId) : nil
+    }
+
+    var hasActiveADBSession: Bool {
+        state == .connected && activeRoute == .adb
+    }
+
     func connectOverADB() async {
         await connectOverADBInternal(isReconnectAttempt: false)
     }
@@ -104,6 +148,7 @@ final class SessionClient: ObservableObject {
             reconnectAttempt = 0
         }
         stopHeartbeat()
+        stopHandshake()
         connection?.cancel()
         connection = nil
         activeBonjourEndpoint = nil
@@ -115,7 +160,7 @@ final class SessionClient: ObservableObject {
         lastErrorMessage = nil
         lastReceivedMessage = nil
         lastInboundAt = nil
-        receiveBuffer.removeAll(keepingCapacity: false)
+        frameParser.reset()
         healthText = isReconnectAttempt
             ? "재연결 \(reconnectAttempt)회차: USB 연결 준비 중"
             : "USB 연결 준비 중"
@@ -132,9 +177,7 @@ final class SessionClient: ObservableObject {
             )
             self.connection = connection
             let generation = connectionGeneration
-            currentSessionId = UUID().uuidString
-            outboundSequenceNo = 0
-            replayGuard.reset()
+            beginProtocolSession()
 
             connection.stateUpdateHandler = { [weak self] newState in
                 Task { @MainActor in
@@ -157,6 +200,7 @@ final class SessionClient: ObservableObject {
             reconnectAttempt = 0
         }
         stopHeartbeat()
+        stopHandshake()
         connection?.cancel()
         connection = nil
         activeBonjourEndpoint = nil
@@ -168,7 +212,7 @@ final class SessionClient: ObservableObject {
         lastErrorMessage = nil
         lastReceivedMessage = nil
         lastInboundAt = nil
-        receiveBuffer.removeAll(keepingCapacity: false)
+        frameParser.reset()
         healthText = isReconnectAttempt
             ? "재연결 \(reconnectAttempt)회차: Wi-Fi 연결 여는 중"
             : "Wi-Fi 연결 여는 중"
@@ -187,9 +231,7 @@ final class SessionClient: ObservableObject {
         )
         self.connection = connection
         let generation = connectionGeneration
-        currentSessionId = UUID().uuidString
-        outboundSequenceNo = 0
-        replayGuard.reset()
+        beginProtocolSession()
 
         connection.stateUpdateHandler = { [weak self] newState in
             Task { @MainActor in
@@ -208,6 +250,7 @@ final class SessionClient: ObservableObject {
             reconnectAttempt = 0
         }
         stopHeartbeat()
+        stopHandshake()
         connection?.cancel()
         connection = nil
         connectionGeneration += 1
@@ -219,7 +262,7 @@ final class SessionClient: ObservableObject {
         lastErrorMessage = nil
         lastReceivedMessage = nil
         lastInboundAt = nil
-        receiveBuffer.removeAll(keepingCapacity: false)
+        frameParser.reset()
         healthText = isReconnectAttempt
             ? "재연결 \(reconnectAttempt)회차: 찾은 기기에 Wi-Fi 연결 중"
             : "찾은 기기에 Wi-Fi 연결 중"
@@ -229,9 +272,7 @@ final class SessionClient: ObservableObject {
         let connection = NWConnection(to: endpoint, using: parameters)
         self.connection = connection
         let generation = connectionGeneration
-        currentSessionId = UUID().uuidString
-        outboundSequenceNo = 0
-        replayGuard.reset()
+        beginProtocolSession()
 
         connection.stateUpdateHandler = { [weak self] newState in
             Task { @MainActor in
@@ -286,6 +327,7 @@ final class SessionClient: ObservableObject {
         reconnectTask?.cancel()
         reconnectTask = nil
         stopHeartbeat()
+        stopHandshake()
         let routeBeforeDisconnect = activeRoute
         connectionGeneration += 1
         connection?.cancel()
@@ -305,12 +347,16 @@ final class SessionClient: ObservableObject {
         await send(makeEnvelope(type: .ping, payload: ["kind": "adb-mvp"]))
     }
 
-    func sendHello() async {
+    func sendHello(expectedGeneration: UInt64? = nil) async {
+        if let expectedGeneration, expectedGeneration != connectionGeneration { return }
         await send(
             makeEnvelope(
                 type: .hello,
                 payload: [
                     "role": "mac-controller",
+                    "protocolVersion": String(ProtocolLimits.version),
+                    "sessionToken": currentSessionToken,
+                    "clientNonce": localNonce,
                     "transport": activeRoute.wireName,
                     "transportCandidates": "usb-adb-dev,usb-aoa-candidate,secure-lan-candidate",
                     "clipboardKinds": "text,image,video,file",
@@ -318,7 +364,8 @@ final class SessionClient: ObservableObject {
                     "encryptedAppSession": "not-enabled-in-dev-build",
                     "publicKey": identity.publicKeyBase64
                 ]
-            )
+            ),
+            allowsHandshake: true
         )
     }
 
@@ -347,7 +394,8 @@ final class SessionClient: ObservableObject {
         )
     }
 
-    func sendClipboardPreview(payload: [String: String]) async {
+    func sendClipboardPreview(payload: [String: String], expectedGeneration: UInt64) async {
+        guard expectedGeneration == connectionGeneration else { return }
         await send(
             makeEnvelope(
                 type: .clipboardPreview,
@@ -356,163 +404,14 @@ final class SessionClient: ObservableObject {
         )
     }
 
-    func sendEnterControlMode(edge: String) async {
-        await send(
-            makeEnvelope(
-                type: .enterControlMode,
-                payload: ["edge": edge]
-            )
-        )
-    }
-
-    func sendExitControlMode(reason: String) async {
-        await send(
-            makeEnvelope(
-                type: .exitControlMode,
-                payload: ["reason": reason]
-            )
-        )
-    }
-
-    func sendRemoteTap(normalizedX: Double, normalizedY: Double) async {
-        await send(
-            makeEnvelope(
-                type: .remoteTap,
-                payload: [
-                    "normalizedX": String(format: "%.4f", normalizedX),
-                    "normalizedY": String(format: "%.4f", normalizedY)
-                ]
-            )
-        )
-    }
-
-    func sendRemoteGesture(
-        kind: String,
-        startX: Double,
-        startY: Double,
-        endX: Double,
-        endY: Double,
-        durationMs: Int
-    ) async {
-        await send(
-            makeEnvelope(
-                type: .remoteGesture,
-                payload: [
-                    "kind": kind,
-                    "startX": String(format: "%.4f", startX),
-                    "startY": String(format: "%.4f", startY),
-                    "endX": String(format: "%.4f", endX),
-                    "endY": String(format: "%.4f", endY),
-                    "durationMs": String(durationMs)
-                ]
-            )
-        )
-    }
-
-    func sendRemotePinch(
-        centerX: Double,
-        centerY: Double,
-        magnification: Double
-    ) async {
-        await send(
-            makeEnvelope(
-                type: .remotePinch,
-                payload: [
-                    "centerX": String(format: "%.4f", centerX),
-                    "centerY": String(format: "%.4f", centerY),
-                    "magnification": String(format: "%.4f", magnification)
-                ]
-            )
-        )
-    }
-
-    func sendRemoteTouchStart(normalizedX: Double, normalizedY: Double) async {
-        await send(
-            makeEnvelope(
-                type: .remoteTouchStart,
-                payload: [
-                    "normalizedX": String(format: "%.4f", normalizedX),
-                    "normalizedY": String(format: "%.4f", normalizedY)
-                ]
-            )
-        )
-    }
-
-    func sendRemoteTouchMove(normalizedX: Double, normalizedY: Double) async {
-        await send(
-            makeEnvelope(
-                type: .remoteTouchMove,
-                payload: [
-                    "normalizedX": String(format: "%.4f", normalizedX),
-                    "normalizedY": String(format: "%.4f", normalizedY)
-                ]
-            )
-        )
-    }
-
-    func sendRemoteTouchEnd(normalizedX: Double, normalizedY: Double) async {
-        await send(
-            makeEnvelope(
-                type: .remoteTouchEnd,
-                payload: [
-                    "normalizedX": String(format: "%.4f", normalizedX),
-                    "normalizedY": String(format: "%.4f", normalizedY)
-                ]
-            )
-        )
-    }
-
-    func sendRemoteBack() async {
-        await send(makeEnvelope(type: .remoteBack))
-    }
-
-    func sendRemoteHome() async {
-        await send(makeEnvelope(type: .remoteHome))
-    }
-
-    func sendRemotePointerUpdate(
-        normalizedX: Double,
-        normalizedY: Double,
-        primaryButtonDown: Bool
-    ) async {
-        await send(
-            makeEnvelope(
-                type: .remotePointerUpdate,
-                payload: [
-                    "normalizedX": String(format: "%.4f", normalizedX),
-                    "normalizedY": String(format: "%.4f", normalizedY),
-                    "primaryButtonDown": primaryButtonDown ? "true" : "false"
-                ]
-            )
-        )
-    }
-
-    func sendRemoteText(_ text: String) async {
-        await send(
-            makeEnvelope(
-                type: .remoteText,
-                payload: ["text": text]
-            )
-        )
-    }
-
-    func sendRemoteDeleteBackward() async {
-        await send(makeEnvelope(type: .remoteDeleteBackward))
-    }
-
-    func sendRemoteEnterKey() async {
-        await send(makeEnvelope(type: .remoteEnterKey))
-    }
-
-    private func send(_ message: SessionEnvelope) async {
+    private func send(_ message: SessionEnvelope, allowsHandshake: Bool = false) async {
         guard let connection else { return }
+        let generation = connectionGeneration
+        guard message.sessionId == currentSessionId else { return }
+        guard allowsHandshake || (state == .connected && handshakePhase == .complete) else { return }
 
         do {
-            let data = try SessionCodec.encodeLine(message)
-            guard data.count <= maxOutboundFrameBytes else {
-                lastErrorMessage = "전송 데이터가 너무 큽니다"
-                return
-            }
+            let data = try ControlFrameCodec.encode(message)
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 connection.send(content: data, completion: .contentProcessed { error in
                     if let error {
@@ -523,6 +422,7 @@ final class SessionClient: ObservableObject {
                 })
             }
         } catch {
+            guard generation == connectionGeneration, self.connection === connection else { return }
             let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             markFailed(message)
         }
@@ -534,6 +434,12 @@ final class SessionClient: ObservableObject {
         requiresAck: Bool = false
     ) -> SessionEnvelope {
         outboundSequenceNo += 1
+        var boundPayload = payload
+        boundPayload["sessionToken"] = currentSessionToken
+        boundPayload["clientNonce"] = localNonce
+        if !remoteNonce.isEmpty {
+            boundPayload["serverNonce"] = remoteNonce
+        }
         return SessionEnvelope(
             sessionId: currentSessionId,
             sequenceNo: outboundSequenceNo,
@@ -541,7 +447,7 @@ final class SessionClient: ObservableObject {
             type: type,
             deviceId: identity.deviceId,
             deviceName: identity.deviceName,
-            payload: payload
+            payload: boundPayload
         )
     }
 
@@ -550,20 +456,18 @@ final class SessionClient: ObservableObject {
 
         switch newState {
         case .ready:
-            state = .connected
-            reconnectAttempt = 0
-            reconnectTask?.cancel()
-            reconnectTask = nil
+            state = .connecting
             activeTransportDescription = activeRoute.description
-            healthText = "\(activeRoute.description)로 연결됨. 상태 확인 중"
-            startHeartbeat()
+            healthText = "\(activeRoute.description) protocol v2 확인 중"
+            startHandshakeTimeout(generation: generation)
             Task {
-                await sendHello()
+                await sendHello(expectedGeneration: generation)
             }
         case .failed(let error):
             markFailed(error.localizedDescription)
         case .cancelled:
             stopHeartbeat()
+            if case .failed = state { return }
             if shouldAutoReconnect {
                 markFailed("USB 터널이 취소되었습니다")
             } else {
@@ -588,17 +492,23 @@ final class SessionClient: ObservableObject {
                 }
 
                 if let data, !data.isEmpty {
-                    self.receiveBuffer.append(data)
-                    if self.receiveBuffer.count > self.maxReceiveBufferBytes {
-                        self.receiveBuffer.removeAll(keepingCapacity: false)
+                    do {
+                        let frames = try self.frameParser.append(data)
+                        try self.consume(frames: frames, generation: generation)
+                    } catch {
                         self.connection?.cancel()
-                        self.markFailed("받은 데이터가 너무 큽니다")
+                        self.markFailed(self.protocolErrorMessage(error))
                         return
                     }
-                    self.consumeBufferedMessages()
                 }
 
                 if isComplete {
+                    do {
+                        try self.frameParser.finish()
+                    } catch {
+                        self.markFailed(self.protocolErrorMessage(error))
+                        return
+                    }
                     if self.shouldAutoReconnect {
                         self.markFailed("USB 터널이 닫혔습니다")
                     } else {
@@ -613,67 +523,151 @@ final class SessionClient: ObservableObject {
         }
     }
 
-    private func consumeBufferedMessages() {
-        while let newline = receiveBuffer.firstIndex(of: 0x0A) {
-            let chunk = receiveBuffer.prefix(upTo: newline)
-            receiveBuffer.removeSubrange(...newline)
+    private func consume(frames: [ControlFrame], generation: UInt64) throws {
+        for frame in frames {
+            let message = try ControlFrameCodec.decode(frame)
+            let token = message.payload["sessionToken"] ?? ""
+            let clientNonce = message.payload["clientNonce"] ?? ""
+            let serverNonce = message.payload["serverNonce"] ?? ""
 
-            guard !chunk.isEmpty else { continue }
-
-            do {
-                let message = try SessionCodec.decodeLine(Data(chunk))
-                guard replayGuard.accept(message) else {
-                    lastErrorMessage = "오래되었거나 반복된 메시지를 무시했습니다"
-                    continue
+            switch handshakePhase {
+            case .waitingAck:
+                guard message.type == .helloAck,
+                      message.sessionId == currentSessionId,
+                      token == currentSessionToken,
+                      message.payload["protocolVersion"] == String(ProtocolLimits.version),
+                      clientNonce == localNonce,
+                      !serverNonce.isEmpty else {
+                    throw ControlProtocolError.invalidJSON
                 }
-                lastReceivedMessage = message
-                lastInboundAt = Date()
-
-                if message.type == .ping {
-                    Task {
-                        await self.send(self.makeEnvelope(type: .pong, payload: ["replyTo": message.id.uuidString]))
+                remoteNonce = serverNonce
+                replayGuard.begin(
+                    sessionID: currentSessionId,
+                    token: currentSessionToken,
+                    clientNonce: localNonce,
+                    serverNonce: remoteNonce,
+                    generation: generation
+                )
+            case .waitingConfirmation:
+                guard message.type == .helloConfirmed || message.type == .error,
+                      !remoteNonce.isEmpty,
+                      clientNonce == localNonce,
+                      serverNonce == remoteNonce else {
+                    throw ControlProtocolError.invalidJSON
+                }
+                if message.type == .helloConfirmed {
+                    guard message.payload["protocolVersion"] == String(ProtocolLimits.version),
+                          message.payload["replyTo"] == expectedConfirmMessageID?.uuidString else {
+                        throw ControlProtocolError.invalidJSON
                     }
-                } else if message.type == .pong {
-                    healthText = "상태 확인 정상 \(Self.timeLabel(Date()))"
-                } else if message.type == .error {
-                    let reason = message.payload["reason"] ?? message.payload["code"] ?? "상대 기기에서 오류를 보냈습니다"
-                    lastErrorMessage = reason
-                    healthText = "상대 기기 오류: \(reason)"
                 }
-            } catch {
-                lastErrorMessage = error.localizedDescription
+            case .complete:
+                guard message.type != .helloAck,
+                      message.type != .helloConfirm,
+                      message.type != .helloConfirmed,
+                      !remoteNonce.isEmpty,
+                      clientNonce == localNonce,
+                      serverNonce == remoteNonce else {
+                    throw ControlProtocolError.invalidJSON
+                }
+            }
+
+            guard replayGuard.accept(
+                sessionID: message.sessionId,
+                token: token,
+                clientNonce: clientNonce,
+                serverNonce: serverNonce,
+                sequence: message.sequenceNo,
+                generation: generation
+            ) else {
+                lastErrorMessage = "오래되었거나 다른 세션의 메시지를 무시했습니다"
+                continue
+            }
+            lastReceivedMessage = message
+            lastInboundAt = Date()
+
+            if message.type == .helloAck {
+                let confirmation = makeEnvelope(type: .helloConfirm)
+                expectedConfirmMessageID = confirmation.id
+                handshakePhase = .waitingConfirmation
+                Task { await self.send(confirmation, allowsHandshake: true) }
+            } else if message.type == .helloConfirmed {
+                handshakePhase = .complete
+                stopHandshake()
+                state = .connected
+                reconnectAttempt = 0
+                reconnectTask?.cancel()
+                reconnectTask = nil
+                healthText = "\(activeRoute.description)로 연결됨"
+                startHeartbeat()
+            } else if message.type == .ping {
+                let pong = makeEnvelope(type: .pong, payload: ["replyTo": message.id.uuidString])
+                Task { await self.send(pong) }
+            } else if message.type == .pong {
+                healthText = "상태 확인 정상 \(Self.timeLabel(Date()))"
+            } else if message.type == .error {
+                let reason = message.payload["reason"] ?? message.payload["code"] ?? "상대 기기에서 오류를 보냈습니다"
+                lastErrorMessage = reason
+                healthText = "상대 기기 오류: \(reason)"
             }
         }
     }
 
+    private func protocolErrorMessage(_ error: Error) -> String {
+        if case ControlProtocolError.unsupportedVersion(let version) = error {
+            return "프로토콜 버전이 맞지 않습니다: \(version)"
+        }
+        return "protocol v2 메시지를 처리하지 못했습니다"
+    }
+
     private func markFailed(_ message: String) {
         stopHeartbeat()
+        stopHandshake()
         state = .failed(message)
         lastErrorMessage = message
         healthText = "연결 문제: \(message)"
         scheduleReconnect(reason: message)
     }
 
+    private func startHandshakeTimeout(generation: UInt64) {
+        stopHandshake()
+        handshakeTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                guard let self,
+                      generation == self.connectionGeneration,
+                      self.state == .connecting else { return }
+                self.markFailed("protocol v2 응답 시간이 초과되었습니다")
+            }
+        }
+    }
+
+    private func stopHandshake() {
+        handshakeTask?.cancel()
+        handshakeTask = nil
+    }
+
     private func startHeartbeat() {
         heartbeatTask?.cancel()
+        let generation = connectionGeneration
         heartbeatTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 6_000_000_000)
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
-                    guard let self, self.state == .connected else { return }
+                    guard let self,
+                          self.state == .connected,
+                          self.connectionGeneration == generation else { return }
                     self.healthText = "상태 확인 보냄 \(Self.timeLabel(Date()))"
-                    Task {
-                        await self.send(
-                            self.makeEnvelope(
-                                type: .ping,
-                                payload: [
-                                    "kind": "heartbeat",
-                                    "sentAtUnixMs": String(Int64(Date().timeIntervalSince1970 * 1000))
-                                ]
-                            )
-                        )
-                    }
+                    let ping = self.makeEnvelope(
+                        type: .ping,
+                        payload: [
+                            "kind": "heartbeat",
+                            "sentAtUnixMs": String(Int64(Date().timeIntervalSince1970 * 1000))
+                        ]
+                    )
+                    Task { await self.send(ping) }
                 }
             }
         }
@@ -695,15 +689,16 @@ final class SessionClient: ObservableObject {
                     self.reconnectAttempt += 1
                     return self.reconnectAttempt
                 }
-                let maxAttempts = await MainActor.run { self?.maxReconnectAttempts ?? 0 }
-                guard attempt <= maxAttempts else {
+                let delaySeconds = await MainActor.run {
+                    self?.reconnectPolicy.delaySeconds(forAttempt: attempt)
+                }
+                guard let delaySeconds else {
                     await MainActor.run {
                         self?.healthText = "반복 실패로 자동 재연결을 중지했습니다"
                     }
                     return
                 }
-
-                let delaySeconds = min(2 + attempt, 10)
+                let maxAttempts = await MainActor.run { self?.reconnectPolicy.maxAttempts ?? 0 }
                 await MainActor.run {
                     self?.healthText = "\(delaySeconds)초 후 재연결 \(attempt)/\(maxAttempts): \(reason)"
                 }
@@ -730,7 +725,7 @@ final class SessionClient: ObservableObject {
                 case .none:
                     return
                 }
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                try? await Task.sleep(nanoseconds: 6_000_000_000)
 
                 let connected = await MainActor.run { self?.state == .connected }
                 if connected {

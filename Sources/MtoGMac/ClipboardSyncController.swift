@@ -1,6 +1,7 @@
 import AppKit
 import CryptoKit
 import Foundation
+import MtoGCore
 import UniformTypeIdentifiers
 
 struct ClipboardSyncPayload {
@@ -143,7 +144,8 @@ final class ClipboardSyncController {
     var localTextHandler: ((ClipboardSyncPayload) -> Void)?
     var diagnosticHandler: ((String) -> Void)?
 
-    private let pasteboard = NSPasteboard.general
+    private let pasteboardAdapter: PasteboardAdapter
+    private var pasteboard: NSPasteboard { pasteboardAdapter.pasteboard }
     private let fileManager = FileManager.default
     private let cacheDirectory: URL
     private let maxTransferBytes = ClipboardSyncPayload.maxTransferBytes
@@ -151,16 +153,13 @@ final class ClipboardSyncController {
     private let maxCacheBytes = 160 * 1_024 * 1_024
     private let maxCacheFiles = 80
     private let maxCacheAgeSeconds: TimeInterval = 7 * 24 * 60 * 60
-    private var pollTimer: Timer?
-    private var lastChangeCount: Int
     private var lastObservedSignature: String?
-    private var suppressNextLocalEvent = false
 
-    init() {
-        lastChangeCount = pasteboard.changeCount
+    init(pasteboardAdapter: PasteboardAdapter = PasteboardAdapter(), cacheDirectoryOverride: URL? = nil) {
+        self.pasteboardAdapter = pasteboardAdapter
         let baseDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.temporaryDirectory
-        let cacheDirectory = baseDirectory
+        let cacheDirectory = cacheDirectoryOverride ?? baseDirectory
             .appendingPathComponent("MtoG", isDirectory: true)
             .appendingPathComponent("ClipboardCache", isDirectory: true)
         try? fileManager.createDirectory(
@@ -175,19 +174,15 @@ final class ClipboardSyncController {
     func start() {
         stop()
         cleanupCache()
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.pollClipboard()
-            }
+        pasteboardAdapter.observationHandler = { [weak self] in
+            self?.pollClipboard()
         }
-        if let pollTimer {
-            RunLoop.main.add(pollTimer, forMode: .common)
-        }
+        pasteboardAdapter.startMonitoring()
     }
 
     func stop() {
-        pollTimer?.invalidate()
-        pollTimer = nil
+        pasteboardAdapter.observationHandler = nil
+        pasteboardAdapter.stopMonitoring()
     }
 
     func currentPayload() -> ClipboardSyncPayload? {
@@ -195,7 +190,6 @@ final class ClipboardSyncController {
     }
 
     func applyRemotePayload(_ payload: ClipboardSyncPayload) {
-        suppressNextLocalEvent = true
         pasteboard.clearContents()
 
         switch payload.kind {
@@ -227,7 +221,7 @@ final class ClipboardSyncController {
             pasteboard.writeObjects([fileURL as NSURL])
         }
 
-        lastChangeCount = pasteboard.changeCount
+        pasteboardAdapter.acknowledgeCurrentChange()
         lastObservedSignature = payload.signature
     }
 
@@ -252,7 +246,6 @@ final class ClipboardSyncController {
     }
 
     func recopyHistoryItem(_ item: ClipboardHistoryItem) -> Bool {
-        suppressNextLocalEvent = true
         pasteboard.clearContents()
 
         switch item.kind {
@@ -283,7 +276,7 @@ final class ClipboardSyncController {
             pasteboard.writeObjects([fileURL as NSURL])
         }
 
-        lastChangeCount = pasteboard.changeCount
+        pasteboardAdapter.acknowledgeCurrentChange()
         return true
     }
 
@@ -324,15 +317,6 @@ final class ClipboardSyncController {
     }
 
     private func pollClipboard() {
-        guard pasteboard.changeCount != lastChangeCount else { return }
-        lastChangeCount = pasteboard.changeCount
-
-        if suppressNextLocalEvent {
-            suppressNextLocalEvent = false
-            lastObservedSignature = readClipboardPayload()?.signature
-            return
-        }
-
         guard let payload = readClipboardPayload() else {
             lastObservedSignature = nil
             return
@@ -384,7 +368,7 @@ final class ClipboardSyncController {
         return urls?.first
     }
 
-    private func filePayload(for fileURL: URL) -> ClipboardSyncPayload? {
+    func filePayload(for fileURL: URL) -> ClipboardSyncPayload? {
         guard isRegularReadableFile(fileURL) else {
             diagnosticHandler?("Mac 클립보드 파일을 읽을 수 없습니다")
             return nil
@@ -415,7 +399,7 @@ final class ClipboardSyncController {
             text: nil,
             fileName: fileName,
             mimeType: type?.preferredMIMEType ?? "application/octet-stream",
-            binaryData: kind == .image ? normalizedPNGData(from: fileData, fileURL: fileURL) ?? fileData : fileData,
+            binaryData: fileData,
             sizeInBytes: fileData.count
         )
     }

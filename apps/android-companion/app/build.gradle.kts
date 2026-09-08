@@ -23,8 +23,9 @@ android {
         applicationId = "com.mtog.app"
         minSdk = 31
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.1.3"
+        versionCode = 6
+        versionName = "0.2.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -76,6 +77,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":core"))
+
     val composeBom = platform("androidx.compose:compose-bom:2025.01.01")
 
     implementation("androidx.core:core-ktx:1.15.0")
@@ -87,6 +90,10 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+
+    testImplementation(kotlin("test"))
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
 
     debugImplementation(composeBom)
     debugImplementation("androidx.compose.ui:ui-tooling")

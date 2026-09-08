@@ -1,0 +1,3770 @@
+[
+  {
+    "time": "16:28:20.483",
+    "fps": 0,
+    "bitrate": 84171,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:21.491",
+    "fps": 59,
+    "bitrate": 1274396,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:22.491",
+    "fps": 57,
+    "bitrate": 1173280,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:23.500",
+    "fps": 57,
+    "bitrate": 1173867,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:24.513",
+    "fps": 57,
+    "bitrate": 1171241,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:25.515",
+    "fps": 56,
+    "bitrate": 1181069,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:26.516",
+    "fps": 56,
+    "bitrate": 1176391,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:27.533",
+    "fps": 57,
+    "bitrate": 1165467,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:28.545",
+    "fps": 57,
+    "bitrate": 1171351,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:29.551",
+    "fps": 56,
+    "bitrate": 1169510,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:30.566",
+    "fps": 57,
+    "bitrate": 1171649,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:31.579",
+    "fps": 57,
+    "bitrate": 1169405,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:32.587",
+    "fps": 57,
+    "bitrate": 1180380,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:33.587",
+    "fps": 57,
+    "bitrate": 1183904,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:34.602",
+    "fps": 57,
+    "bitrate": 1173004,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:35.606",
+    "fps": 56,
+    "bitrate": 1171250,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:36.618",
+    "fps": 58,
+    "bitrate": 1182758,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:37.633",
+    "fps": 57,
+    "bitrate": 1171084,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:38.637",
+    "fps": 57,
+    "bitrate": 1170173,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:39.638",
+    "fps": 57,
+    "bitrate": 1180600,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:40.651",
+    "fps": 57,
+    "bitrate": 1171337,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:41.664",
+    "fps": 55,
+    "bitrate": 1908398,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:42.669",
+    "fps": 57,
+    "bitrate": 2623761,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:43.684",
+    "fps": 58,
+    "bitrate": 2468437,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:44.698",
+    "fps": 58,
+    "bitrate": 1314911,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:45.703",
+    "fps": 57,
+    "bitrate": 1259462,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:46.718",
+    "fps": 57,
+    "bitrate": 1248323,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:47.721",
+    "fps": 57,
+    "bitrate": 1264957,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:48.728",
+    "fps": 57,
+    "bitrate": 1262427,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:49.734",
+    "fps": 57,
+    "bitrate": 1264031,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:50.745",
+    "fps": 57,
+    "bitrate": 1253090,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:51.756",
+    "fps": 57,
+    "bitrate": 1254433,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:52.760",
+    "fps": 57,
+    "bitrate": 1267617,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:53.766",
+    "fps": 57,
+    "bitrate": 1268310,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:54.779",
+    "fps": 57,
+    "bitrate": 1266614,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:55.780",
+    "fps": 57,
+    "bitrate": 1271000,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:56.793",
+    "fps": 57,
+    "bitrate": 1242969,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:57.800",
+    "fps": 57,
+    "bitrate": 1254562,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:58.815",
+    "fps": 58,
+    "bitrate": 1258805,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:28:59.816",
+    "fps": 57,
+    "bitrate": 1257622,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:00.831",
+    "fps": 57,
+    "bitrate": 1243297,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:01.838",
+    "fps": 57,
+    "bitrate": 1252984,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:02.854",
+    "fps": 58,
+    "bitrate": 1248236,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:03.861",
+    "fps": 57,
+    "bitrate": 1264079,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:04.862",
+    "fps": 57,
+    "bitrate": 1262465,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:05.864",
+    "fps": 55,
+    "bitrate": 1302914,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:06.865",
+    "fps": 53,
+    "bitrate": 1458445,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:07.880",
+    "fps": 56,
+    "bitrate": 1255724,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:08.882",
+    "fps": 56,
+    "bitrate": 1244179,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:09.885",
+    "fps": 58,
+    "bitrate": 1273649,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:10.889",
+    "fps": 57,
+    "bitrate": 1262430,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:11.895",
+    "fps": 57,
+    "bitrate": 1258284,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:12.898",
+    "fps": 57,
+    "bitrate": 1271091,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:13.900",
+    "fps": 57,
+    "bitrate": 2877349,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:14.901",
+    "fps": 57,
+    "bitrate": 1508819,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:15.903",
+    "fps": 57,
+    "bitrate": 1422299,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:16.912",
+    "fps": 57,
+    "bitrate": 1418611,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:17.927",
+    "fps": 57,
+    "bitrate": 1423527,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:18.931",
+    "fps": 57,
+    "bitrate": 1425808,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:19.937",
+    "fps": 57,
+    "bitrate": 1425145,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:20.947",
+    "fps": 57,
+    "bitrate": 1411057,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:21.953",
+    "fps": 57,
+    "bitrate": 1421550,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:22.961",
+    "fps": 57,
+    "bitrate": 1407888,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:23.969",
+    "fps": 57,
+    "bitrate": 1414166,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:24.969",
+    "fps": 58,
+    "bitrate": 1845296,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:25.976",
+    "fps": 57,
+    "bitrate": 1965817,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:29:26.983",
+    "fps": 57,
+    "bitrate": 1321821,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:18.082",
+    "fps": 0,
+    "bitrate": 19687,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:19.093",
+    "fps": 58,
+    "bitrate": 1342923,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:20.106",
+    "fps": 56,
+    "bitrate": 1339656,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:21.117",
+    "fps": 52,
+    "bitrate": 1406536,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:22.119",
+    "fps": 57,
+    "bitrate": 1329413,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:23.129",
+    "fps": 57,
+    "bitrate": 1317370,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:24.153",
+    "fps": 56,
+    "bitrate": 1293890,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:25.164",
+    "fps": 57,
+    "bitrate": 1323624,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:26.166",
+    "fps": 57,
+    "bitrate": 1340966,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:27.172",
+    "fps": 57,
+    "bitrate": 1346560,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:28.186",
+    "fps": 57,
+    "bitrate": 1327692,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:29.201",
+    "fps": 57,
+    "bitrate": 1315582,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:30.201",
+    "fps": 58,
+    "bitrate": 1339248,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:31.204",
+    "fps": 57,
+    "bitrate": 1341152,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:32.217",
+    "fps": 57,
+    "bitrate": 1322645,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:33.234",
+    "fps": 57,
+    "bitrate": 1319472,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:34.234",
+    "fps": 57,
+    "bitrate": 1336143,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:35.250",
+    "fps": 58,
+    "bitrate": 1328771,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:36.254",
+    "fps": 56,
+    "bitrate": 1323354,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:37.267",
+    "fps": 58,
+    "bitrate": 1330037,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:38.274",
+    "fps": 56,
+    "bitrate": 1315177,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:39.286",
+    "fps": 57,
+    "bitrate": 1324411,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:40.298",
+    "fps": 57,
+    "bitrate": 1318980,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:41.302",
+    "fps": 56,
+    "bitrate": 1314956,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:42.315",
+    "fps": 57,
+    "bitrate": 1312197,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:43.335",
+    "fps": 56,
+    "bitrate": 1311130,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:44.349",
+    "fps": 58,
+    "bitrate": 1328339,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:45.352",
+    "fps": 56,
+    "bitrate": 1314632,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:46.370",
+    "fps": 57,
+    "bitrate": 1302072,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:47.370",
+    "fps": 57,
+    "bitrate": 1318736,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:48.380",
+    "fps": 57,
+    "bitrate": 1315524,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:49.385",
+    "fps": 56,
+    "bitrate": 1306998,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:50.398",
+    "fps": 57,
+    "bitrate": 1307459,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:51.400",
+    "fps": 57,
+    "bitrate": 1331732,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:52.402",
+    "fps": 57,
+    "bitrate": 1318500,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:53.414",
+    "fps": 57,
+    "bitrate": 1308300,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:54.421",
+    "fps": 57,
+    "bitrate": 1320580,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:55.434",
+    "fps": 58,
+    "bitrate": 1314224,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:56.447",
+    "fps": 57,
+    "bitrate": 1309970,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:57.466",
+    "fps": 57,
+    "bitrate": 1312211,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:58.466",
+    "fps": 58,
+    "bitrate": 1331640,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:31:59.481",
+    "fps": 57,
+    "bitrate": 1310951,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:00.482",
+    "fps": 58,
+    "bitrate": 1334528,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:01.487",
+    "fps": 57,
+    "bitrate": 1322396,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:02.496",
+    "fps": 57,
+    "bitrate": 1316955,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:03.497",
+    "fps": 57,
+    "bitrate": 1326227,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:04.509",
+    "fps": 58,
+    "bitrate": 1321233,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:05.519",
+    "fps": 57,
+    "bitrate": 1311976,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:06.526",
+    "fps": 57,
+    "bitrate": 1317481,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:07.532",
+    "fps": 57,
+    "bitrate": 1320859,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:08.535",
+    "fps": 56,
+    "bitrate": 1311888,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:09.542",
+    "fps": 57,
+    "bitrate": 1309230,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:10.554",
+    "fps": 57,
+    "bitrate": 1310646,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:11.553",
+    "fps": 57,
+    "bitrate": 1323112,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:12.553",
+    "fps": 57,
+    "bitrate": 1320600,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:13.561",
+    "fps": 57,
+    "bitrate": 1316873,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:14.571",
+    "fps": 57,
+    "bitrate": 1318993,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:15.582",
+    "fps": 57,
+    "bitrate": 1313312,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:16.602",
+    "fps": 56,
+    "bitrate": 1316993,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:17.614",
+    "fps": 57,
+    "bitrate": 1312007,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:18.628",
+    "fps": 57,
+    "bitrate": 1301325,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:19.632",
+    "fps": 56,
+    "bitrate": 1308772,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:20.649",
+    "fps": 58,
+    "bitrate": 1314763,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:21.655",
+    "fps": 56,
+    "bitrate": 1316869,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:22.665",
+    "fps": 58,
+    "bitrate": 1323575,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:23.665",
+    "fps": 57,
+    "bitrate": 1322709,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:24.669",
+    "fps": 56,
+    "bitrate": 1307529,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:25.680",
+    "fps": 57,
+    "bitrate": 1312648,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:26.695",
+    "fps": 58,
+    "bitrate": 1314635,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:27.712",
+    "fps": 56,
+    "bitrate": 1302891,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:28.716",
+    "fps": 57,
+    "bitrate": 1321003,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:29.728",
+    "fps": 57,
+    "bitrate": 1312640,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:30.735",
+    "fps": 57,
+    "bitrate": 1315058,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:31.751",
+    "fps": 57,
+    "bitrate": 1307055,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:32.768",
+    "fps": 57,
+    "bitrate": 1318960,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:33.789",
+    "fps": 56,
+    "bitrate": 1310896,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:34.801",
+    "fps": 58,
+    "bitrate": 1319810,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:35.806",
+    "fps": 57,
+    "bitrate": 1313705,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:36.805",
+    "fps": 57,
+    "bitrate": 1317776,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:37.819",
+    "fps": 57,
+    "bitrate": 1312631,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:38.832",
+    "fps": 57,
+    "bitrate": 1307016,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:39.837",
+    "fps": 58,
+    "bitrate": 1331160,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:40.851",
+    "fps": 58,
+    "bitrate": 1317980,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:41.861",
+    "fps": 58,
+    "bitrate": 1323120,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:42.866",
+    "fps": 56,
+    "bitrate": 1312159,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:43.868",
+    "fps": 57,
+    "bitrate": 1324151,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:44.870",
+    "fps": 57,
+    "bitrate": 1326435,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:45.883",
+    "fps": 57,
+    "bitrate": 1313484,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:46.900",
+    "fps": 58,
+    "bitrate": 1318293,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:47.900",
+    "fps": 57,
+    "bitrate": 1321192,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:48.903",
+    "fps": 56,
+    "bitrate": 1313738,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:49.905",
+    "fps": 56,
+    "bitrate": 1329173,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:50.912",
+    "fps": 57,
+    "bitrate": 1325558,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:51.915",
+    "fps": 56,
+    "bitrate": 1312366,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:52.918",
+    "fps": 57,
+    "bitrate": 1323673,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:53.919",
+    "fps": 57,
+    "bitrate": 1314784,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:54.931",
+    "fps": 57,
+    "bitrate": 1311194,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:55.951",
+    "fps": 56,
+    "bitrate": 1306705,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:56.965",
+    "fps": 58,
+    "bitrate": 1340094,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:57.978",
+    "fps": 56,
+    "bitrate": 1302790,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:58.991",
+    "fps": 57,
+    "bitrate": 1336820,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:32:59.993",
+    "fps": 57,
+    "bitrate": 1318610,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:00.999",
+    "fps": 57,
+    "bitrate": 1317375,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:02.001",
+    "fps": 57,
+    "bitrate": 1324846,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:03.003",
+    "fps": 57,
+    "bitrate": 1325437,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:04.008",
+    "fps": 57,
+    "bitrate": 1319132,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:05.017",
+    "fps": 57,
+    "bitrate": 1316099,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:06.026",
+    "fps": 57,
+    "bitrate": 1322029,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:07.033",
+    "fps": 58,
+    "bitrate": 1340234,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:08.039",
+    "fps": 57,
+    "bitrate": 1320381,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:09.046",
+    "fps": 57,
+    "bitrate": 1324755,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:10.051",
+    "fps": 57,
+    "bitrate": 1314990,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:11.052",
+    "fps": 58,
+    "bitrate": 1332048,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:12.051",
+    "fps": 57,
+    "bitrate": 1319424,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:13.052",
+    "fps": 57,
+    "bitrate": 1316872,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:14.058",
+    "fps": 56,
+    "bitrate": 1308115,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:15.065",
+    "fps": 57,
+    "bitrate": 1318681,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:16.076",
+    "fps": 57,
+    "bitrate": 1316985,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:17.085",
+    "fps": 57,
+    "bitrate": 1319365,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:18.098",
+    "fps": 57,
+    "bitrate": 2135715,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:19.097",
+    "fps": 57,
+    "bitrate": 1314016,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:20.100",
+    "fps": 57,
+    "bitrate": 1327010,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:21.101",
+    "fps": 57,
+    "bitrate": 1324187,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:22.115",
+    "fps": 57,
+    "bitrate": 1316627,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:23.116",
+    "fps": 57,
+    "bitrate": 1338275,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:24.119",
+    "fps": 57,
+    "bitrate": 1336439,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:25.129",
+    "fps": 57,
+    "bitrate": 1315054,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:26.133",
+    "fps": 57,
+    "bitrate": 1320876,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:27.147",
+    "fps": 58,
+    "bitrate": 1320591,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:28.165",
+    "fps": 57,
+    "bitrate": 1310513,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:29.167",
+    "fps": 57,
+    "bitrate": 1330903,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:30.176",
+    "fps": 55,
+    "bitrate": 1334271,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:31.183",
+    "fps": 56,
+    "bitrate": 1363042,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:32.197",
+    "fps": 57,
+    "bitrate": 1369167,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:33.201",
+    "fps": 57,
+    "bitrate": 1341822,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:34.221",
+    "fps": 56,
+    "bitrate": 1303317,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:35.230",
+    "fps": 57,
+    "bitrate": 1317045,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:36.237",
+    "fps": 57,
+    "bitrate": 1323400,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:37.251",
+    "fps": 57,
+    "bitrate": 1307103,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:38.260",
+    "fps": 57,
+    "bitrate": 1317956,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:39.264",
+    "fps": 57,
+    "bitrate": 1324777,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:40.266",
+    "fps": 56,
+    "bitrate": 1334253,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:41.267",
+    "fps": 57,
+    "bitrate": 1336207,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:42.278",
+    "fps": 57,
+    "bitrate": 1314033,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:43.278",
+    "fps": 57,
+    "bitrate": 1316736,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:44.283",
+    "fps": 57,
+    "bitrate": 1324545,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:45.297",
+    "fps": 57,
+    "bitrate": 1312781,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:46.302",
+    "fps": 57,
+    "bitrate": 1328135,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:47.315",
+    "fps": 57,
+    "bitrate": 1313667,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:48.328",
+    "fps": 57,
+    "bitrate": 1305682,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:49.333",
+    "fps": 57,
+    "bitrate": 1318624,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:50.334",
+    "fps": 56,
+    "bitrate": 1323796,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:51.348",
+    "fps": 57,
+    "bitrate": 1313271,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:52.352",
+    "fps": 57,
+    "bitrate": 1319657,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:53.365",
+    "fps": 57,
+    "bitrate": 1312805,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:54.365",
+    "fps": 57,
+    "bitrate": 1321224,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:55.367",
+    "fps": 56,
+    "bitrate": 1318609,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:56.384",
+    "fps": 56,
+    "bitrate": 1304872,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:57.384",
+    "fps": 57,
+    "bitrate": 1317720,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:58.384",
+    "fps": 57,
+    "bitrate": 1323040,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:33:59.400",
+    "fps": 57,
+    "bitrate": 1314574,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:00.420",
+    "fps": 56,
+    "bitrate": 1301333,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:01.431",
+    "fps": 57,
+    "bitrate": 1313740,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:02.437",
+    "fps": 56,
+    "bitrate": 1305916,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:03.450",
+    "fps": 57,
+    "bitrate": 1310775,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:04.466",
+    "fps": 57,
+    "bitrate": 1304772,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:05.470",
+    "fps": 56,
+    "bitrate": 1310613,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:06.485",
+    "fps": 57,
+    "bitrate": 1306488,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:07.499",
+    "fps": 57,
+    "bitrate": 1311384,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:08.501",
+    "fps": 57,
+    "bitrate": 1322387,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:09.519",
+    "fps": 57,
+    "bitrate": 1313155,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:10.532",
+    "fps": 57,
+    "bitrate": 1306766,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:11.546",
+    "fps": 57,
+    "bitrate": 1307767,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:12.557",
+    "fps": 57,
+    "bitrate": 1315513,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:13.562",
+    "fps": 56,
+    "bitrate": 1325118,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:14.568",
+    "fps": 55,
+    "bitrate": 1308278,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:15.570",
+    "fps": 56,
+    "bitrate": 1318690,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:16.577",
+    "fps": 56,
+    "bitrate": 1306796,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:17.582",
+    "fps": 56,
+    "bitrate": 1311387,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:18.599",
+    "fps": 57,
+    "bitrate": 1302827,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:19.614",
+    "fps": 57,
+    "bitrate": 1303062,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:20.628",
+    "fps": 57,
+    "bitrate": 1304078,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:21.647",
+    "fps": 56,
+    "bitrate": 1299662,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:22.655",
+    "fps": 57,
+    "bitrate": 1317761,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:23.664",
+    "fps": 56,
+    "bitrate": 1303176,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:24.666",
+    "fps": 56,
+    "bitrate": 1314195,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:25.683",
+    "fps": 57,
+    "bitrate": 1299602,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:26.687",
+    "fps": 56,
+    "bitrate": 1311171,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:27.702",
+    "fps": 56,
+    "bitrate": 1305633,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:28.720",
+    "fps": 56,
+    "bitrate": 1307768,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:29.733",
+    "fps": 57,
+    "bitrate": 1309820,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:30.734",
+    "fps": 56,
+    "bitrate": 1315460,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:31.737",
+    "fps": 56,
+    "bitrate": 1322456,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:32.748",
+    "fps": 55,
+    "bitrate": 1298294,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:33.748",
+    "fps": 57,
+    "bitrate": 1320144,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:34.762",
+    "fps": 57,
+    "bitrate": 1316678,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:35.767",
+    "fps": 56,
+    "bitrate": 1318997,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:36.770",
+    "fps": 57,
+    "bitrate": 1325623,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:37.782",
+    "fps": 55,
+    "bitrate": 1297368,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:38.781",
+    "fps": 57,
+    "bitrate": 1321072,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:39.781",
+    "fps": 57,
+    "bitrate": 1324280,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:40.797",
+    "fps": 57,
+    "bitrate": 1309842,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:41.799",
+    "fps": 56,
+    "bitrate": 1322701,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:42.821",
+    "fps": 55,
+    "bitrate": 1290197,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:43.833",
+    "fps": 57,
+    "bitrate": 1309897,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:44.849",
+    "fps": 57,
+    "bitrate": 1305874,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:45.862",
+    "fps": 57,
+    "bitrate": 1307735,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:46.879",
+    "fps": 57,
+    "bitrate": 1299728,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:47.896",
+    "fps": 57,
+    "bitrate": 1303811,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:48.898",
+    "fps": 55,
+    "bitrate": 1310241,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:49.900",
+    "fps": 57,
+    "bitrate": 1330879,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:50.918",
+    "fps": 56,
+    "bitrate": 1304691,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:51.924",
+    "fps": 57,
+    "bitrate": 1320652,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:52.932",
+    "fps": 55,
+    "bitrate": 1300869,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:53.939",
+    "fps": 56,
+    "bitrate": 1309682,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:54.941",
+    "fps": 54,
+    "bitrate": 2959536,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:55.945",
+    "fps": 56,
+    "bitrate": 1312486,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:56.960",
+    "fps": 55,
+    "bitrate": 1291783,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:34:57.969",
+    "fps": 56,
+    "bitrate": 1307900,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:02.877",
+    "fps": 0,
+    "bitrate": 174736,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:03.884",
+    "fps": 57,
+    "bitrate": 1327357,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:05.076",
+    "fps": 20,
+    "bitrate": 871704,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:06.085",
+    "fps": 57,
+    "bitrate": 1319603,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:07.093",
+    "fps": 57,
+    "bitrate": 1300860,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:08.094",
+    "fps": 56,
+    "bitrate": 1300115,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:09.096",
+    "fps": 55,
+    "bitrate": 3180862,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:10.098",
+    "fps": 57,
+    "bitrate": 4772619,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:11.099",
+    "fps": 55,
+    "bitrate": 1229812,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:12.100",
+    "fps": 57,
+    "bitrate": 1412960,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:13.112",
+    "fps": 57,
+    "bitrate": 1329089,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:16.950",
+    "fps": 3,
+    "bitrate": 221183,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:17.959",
+    "fps": 57,
+    "bitrate": 1285320,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:18.970",
+    "fps": 57,
+    "bitrate": 1222233,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:19.980",
+    "fps": 56,
+    "bitrate": 1218081,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:20.993",
+    "fps": 57,
+    "bitrate": 1219198,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:22.000",
+    "fps": 57,
+    "bitrate": 1226152,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:23.003",
+    "fps": 57,
+    "bitrate": 1264295,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:24.012",
+    "fps": 49,
+    "bitrate": 1158025,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:25.014",
+    "fps": 56,
+    "bitrate": 1240447,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:26.031",
+    "fps": 57,
+    "bitrate": 1224047,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:27.039",
+    "fps": 57,
+    "bitrate": 1239214,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:28.040",
+    "fps": 54,
+    "bitrate": 1212515,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:29.055",
+    "fps": 55,
+    "bitrate": 1232914,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:30.070",
+    "fps": 49,
+    "bitrate": 1250593,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:31.081",
+    "fps": 56,
+    "bitrate": 1198876,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:32.083",
+    "fps": 57,
+    "bitrate": 1239265,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:33.085",
+    "fps": 56,
+    "bitrate": 1219148,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:34.087",
+    "fps": 56,
+    "bitrate": 1230459,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:35.101",
+    "fps": 58,
+    "bitrate": 1224267,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:36.115",
+    "fps": 57,
+    "bitrate": 1213885,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:37.132",
+    "fps": 58,
+    "bitrate": 1208062,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:38.133",
+    "fps": 57,
+    "bitrate": 1227036,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:39.137",
+    "fps": 57,
+    "bitrate": 1233730,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:40.145",
+    "fps": 57,
+    "bitrate": 1223270,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:41.155",
+    "fps": 57,
+    "bitrate": 1218051,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:42.165",
+    "fps": 57,
+    "bitrate": 1227524,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:43.168",
+    "fps": 56,
+    "bitrate": 1221631,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:44.174",
+    "fps": 57,
+    "bitrate": 1220728,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:45.185",
+    "fps": 56,
+    "bitrate": 1203968,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:46.185",
+    "fps": 58,
+    "bitrate": 1231344,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:47.197",
+    "fps": 57,
+    "bitrate": 1216956,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:48.208",
+    "fps": 57,
+    "bitrate": 1222733,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:49.219",
+    "fps": 57,
+    "bitrate": 1223912,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:50.234",
+    "fps": 57,
+    "bitrate": 1216023,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:51.250",
+    "fps": 57,
+    "bitrate": 1201541,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:52.264",
+    "fps": 57,
+    "bitrate": 1199652,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:53.276",
+    "fps": 57,
+    "bitrate": 1212885,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:54.285",
+    "fps": 57,
+    "bitrate": 1213811,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:55.285",
+    "fps": 57,
+    "bitrate": 1211824,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:56.299",
+    "fps": 57,
+    "bitrate": 1196086,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:57.316",
+    "fps": 58,
+    "bitrate": 1208566,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:58.318",
+    "fps": 57,
+    "bitrate": 1223640,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:35:59.320",
+    "fps": 56,
+    "bitrate": 1210778,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:00.330",
+    "fps": 57,
+    "bitrate": 1207841,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:01.336",
+    "fps": 56,
+    "bitrate": 1209385,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:02.336",
+    "fps": 57,
+    "bitrate": 1225710,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:03.336",
+    "fps": 57,
+    "bitrate": 1204032,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:04.350",
+    "fps": 57,
+    "bitrate": 1198303,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:05.364",
+    "fps": 57,
+    "bitrate": 1208947,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:06.379",
+    "fps": 58,
+    "bitrate": 1216622,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:07.393",
+    "fps": 57,
+    "bitrate": 1211463,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:08.399",
+    "fps": 57,
+    "bitrate": 1224174,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:09.413",
+    "fps": 57,
+    "bitrate": 1205861,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:10.416",
+    "fps": 56,
+    "bitrate": 1207146,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:11.419",
+    "fps": 56,
+    "bitrate": 1213232,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:12.429",
+    "fps": 57,
+    "bitrate": 1222320,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:13.444",
+    "fps": 57,
+    "bitrate": 1211586,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:14.452",
+    "fps": 57,
+    "bitrate": 1223674,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:15.468",
+    "fps": 57,
+    "bitrate": 1215440,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:16.475",
+    "fps": 57,
+    "bitrate": 1221418,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:17.485",
+    "fps": 57,
+    "bitrate": 1219390,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:18.499",
+    "fps": 58,
+    "bitrate": 1225413,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:19.515",
+    "fps": 58,
+    "bitrate": 1211689,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:20.529",
+    "fps": 57,
+    "bitrate": 1199944,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:21.544",
+    "fps": 58,
+    "bitrate": 1225883,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:22.551",
+    "fps": 57,
+    "bitrate": 1225199,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:23.563",
+    "fps": 57,
+    "bitrate": 1218268,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:24.563",
+    "fps": 58,
+    "bitrate": 1234424,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:25.568",
+    "fps": 57,
+    "bitrate": 1236111,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:26.582",
+    "fps": 57,
+    "bitrate": 1200157,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:27.583",
+    "fps": 58,
+    "bitrate": 1225040,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:28.598",
+    "fps": 58,
+    "bitrate": 1220874,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:29.600",
+    "fps": 57,
+    "bitrate": 1232415,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:30.600",
+    "fps": 57,
+    "bitrate": 1231640,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:31.604",
+    "fps": 57,
+    "bitrate": 1233737,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:32.614",
+    "fps": 57,
+    "bitrate": 1215485,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:33.630",
+    "fps": 57,
+    "bitrate": 1219551,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:34.632",
+    "fps": 57,
+    "bitrate": 1236063,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:35.651",
+    "fps": 56,
+    "bitrate": 1212275,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:36.660",
+    "fps": 57,
+    "bitrate": 1211041,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:37.668",
+    "fps": 57,
+    "bitrate": 1214333,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:38.683",
+    "fps": 57,
+    "bitrate": 1217205,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:39.697",
+    "fps": 57,
+    "bitrate": 1218882,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:40.709",
+    "fps": 57,
+    "bitrate": 1220256,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:41.709",
+    "fps": 57,
+    "bitrate": 1224648,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:42.721",
+    "fps": 57,
+    "bitrate": 1207707,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:43.720",
+    "fps": 56,
+    "bitrate": 1198000,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:44.729",
+    "fps": 57,
+    "bitrate": 1210746,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:45.732",
+    "fps": 56,
+    "bitrate": 1266764,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:46.747",
+    "fps": 56,
+    "bitrate": 1247117,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:47.752",
+    "fps": 57,
+    "bitrate": 1228171,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:48.753",
+    "fps": 57,
+    "bitrate": 1228299,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:49.766",
+    "fps": 54,
+    "bitrate": 1198333,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:50.768",
+    "fps": 57,
+    "bitrate": 1231144,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:51.777",
+    "fps": 58,
+    "bitrate": 1236023,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:52.793",
+    "fps": 58,
+    "bitrate": 1215118,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:53.803",
+    "fps": 57,
+    "bitrate": 1221299,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:54.813",
+    "fps": 58,
+    "bitrate": 1934645,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:55.826",
+    "fps": 58,
+    "bitrate": 1233958,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:56.828",
+    "fps": 57,
+    "bitrate": 1234834,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:57.833",
+    "fps": 57,
+    "bitrate": 1212362,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:58.845",
+    "fps": 57,
+    "bitrate": 1211699,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:36:59.846",
+    "fps": 57,
+    "bitrate": 1217702,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:00.852",
+    "fps": 56,
+    "bitrate": 1236127,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:01.855",
+    "fps": 55,
+    "bitrate": 1255529,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:02.863",
+    "fps": 57,
+    "bitrate": 1221253,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:03.889",
+    "fps": 56,
+    "bitrate": 1195324,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:04.898",
+    "fps": 56,
+    "bitrate": 1193014,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:05.912",
+    "fps": 58,
+    "bitrate": 1200417,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:06.914",
+    "fps": 56,
+    "bitrate": 1207824,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:07.935",
+    "fps": 56,
+    "bitrate": 1203152,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:08.943",
+    "fps": 57,
+    "bitrate": 1202616,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:09.952",
+    "fps": 57,
+    "bitrate": 1215246,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:10.967",
+    "fps": 55,
+    "bitrate": 1183306,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:11.978",
+    "fps": 57,
+    "bitrate": 1203260,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:12.981",
+    "fps": 57,
+    "bitrate": 1216933,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:13.994",
+    "fps": 57,
+    "bitrate": 1204746,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:14.998",
+    "fps": 57,
+    "bitrate": 1222494,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:15.998",
+    "fps": 58,
+    "bitrate": 1229016,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:17.012",
+    "fps": 57,
+    "bitrate": 1208363,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:18.018",
+    "fps": 58,
+    "bitrate": 1229108,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:19.019",
+    "fps": 58,
+    "bitrate": 1228616,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:20.029",
+    "fps": 57,
+    "bitrate": 1215414,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:21.034",
+    "fps": 57,
+    "bitrate": 1227613,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:22.035",
+    "fps": 56,
+    "bitrate": 1215312,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:23.054",
+    "fps": 56,
+    "bitrate": 1201956,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:24.063",
+    "fps": 56,
+    "bitrate": 1203089,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:25.066",
+    "fps": 55,
+    "bitrate": 1203302,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:26.081",
+    "fps": 57,
+    "bitrate": 1206195,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:27.102",
+    "fps": 57,
+    "bitrate": 1208227,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:28.103",
+    "fps": 56,
+    "bitrate": 1219640,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:29.108",
+    "fps": 57,
+    "bitrate": 1221054,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:30.118",
+    "fps": 57,
+    "bitrate": 1212308,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:31.124",
+    "fps": 55,
+    "bitrate": 1204787,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:32.132",
+    "fps": 57,
+    "bitrate": 1216380,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:33.133",
+    "fps": 56,
+    "bitrate": 1210301,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:34.137",
+    "fps": 57,
+    "bitrate": 1224796,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:35.138",
+    "fps": 57,
+    "bitrate": 1227300,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:36.151",
+    "fps": 56,
+    "bitrate": 1205733,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:37.160",
+    "fps": 58,
+    "bitrate": 1239579,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:38.169",
+    "fps": 57,
+    "bitrate": 1230200,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:39.182",
+    "fps": 57,
+    "bitrate": 1217239,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:40.184",
+    "fps": 57,
+    "bitrate": 1239632,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:41.200",
+    "fps": 58,
+    "bitrate": 1220338,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:42.203",
+    "fps": 56,
+    "bitrate": 1219908,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:43.215",
+    "fps": 58,
+    "bitrate": 1226405,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:44.220",
+    "fps": 57,
+    "bitrate": 1222767,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:45.226",
+    "fps": 58,
+    "bitrate": 1242051,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:46.234",
+    "fps": 56,
+    "bitrate": 1220523,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:47.250",
+    "fps": 58,
+    "bitrate": 1234188,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:48.254",
+    "fps": 57,
+    "bitrate": 1227322,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:49.263",
+    "fps": 56,
+    "bitrate": 1201419,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:50.270",
+    "fps": 56,
+    "bitrate": 1199276,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:51.275",
+    "fps": 57,
+    "bitrate": 1217998,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:52.285",
+    "fps": 55,
+    "bitrate": 1200079,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:53.301",
+    "fps": 57,
+    "bitrate": 1218886,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:54.318",
+    "fps": 57,
+    "bitrate": 1217998,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:55.319",
+    "fps": 57,
+    "bitrate": 1235604,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:56.332",
+    "fps": 57,
+    "bitrate": 1223534,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:57.334",
+    "fps": 57,
+    "bitrate": 1234413,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:58.338",
+    "fps": 56,
+    "bitrate": 1216119,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:37:59.338",
+    "fps": 57,
+    "bitrate": 1219248,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:38:00.337",
+    "fps": 57,
+    "bitrate": 1217064,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:38:01.353",
+    "fps": 57,
+    "bitrate": 1218645,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:38:02.382",
+    "fps": 57,
+    "bitrate": 1211063,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:38:03.399",
+    "fps": 58,
+    "bitrate": 1224401,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:38:04.401",
+    "fps": 57,
+    "bitrate": 1228558,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:38:05.414",
+    "fps": 57,
+    "bitrate": 1215976,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:38:06.425",
+    "fps": 58,
+    "bitrate": 1222308,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:38:07.440",
+    "fps": 58,
+    "bitrate": 1215054,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:38:08.447",
+    "fps": 56,
+    "bitrate": 1212456,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:38:09.453",
+    "fps": 57,
+    "bitrate": 1225256,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:38:10.468",
+    "fps": 57,
+    "bitrate": 1225325,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  },
+  {
+    "time": "16:38:11.474",
+    "fps": 58,
+    "bitrate": 1236631,
+    "dropped": 0,
+    "codec": "HEVC",
+    "size": "1920x1200"
+  }
+]

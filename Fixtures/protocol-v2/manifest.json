@@ -1,0 +1,47 @@
+{
+  "protocolVersion": 2,
+  "limits": {
+    "controlPayloadBytes": 37748736,
+    "videoPayloadBytes": 8388608,
+    "automaticClipboardBytes": 262144,
+    "videoConfigBytes": 262144,
+    "videoControlBytes": 65536,
+    "maximumVideoDimension": 8192
+  },
+  "fixtures": [
+    {
+      "name": "control-hello",
+      "semanticPath": "control/hello.json",
+      "framePath": "control/hello.frame",
+      "category": "control"
+    },
+    {
+      "name": "h264-config",
+      "category": "video",
+      "semanticPath": "video/h264-config.json",
+      "framePath": "video/h264-config.packet"
+    },
+    {
+      "name": "h264-keyframe",
+      "category": "video",
+      "semanticPath": "video/h264-keyframe.json",
+      "framePath": "video/h264-keyframe.packet"
+    },
+    {
+      "name": "h264-delta",
+      "category": "video",
+      "semanticPath": "video/h264-delta.json",
+      "framePath": "video/h264-delta.packet"
+    },
+    {
+      "name": "input-geometry",
+      "category": "input",
+      "semanticPath": "input/geometry.json"
+    },
+    {
+      "name": "input-gestures",
+      "category": "input",
+      "semanticPath": "input/gestures.json"
+    }
+  ]
+}

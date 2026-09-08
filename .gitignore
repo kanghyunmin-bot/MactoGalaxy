@@ -32,3 +32,6 @@ dist/
 *.mobileprovision
 .env
 .env.*
+
+# Local signing material
+secrets/

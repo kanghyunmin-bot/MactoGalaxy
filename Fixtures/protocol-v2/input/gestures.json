@@ -1,0 +1,130 @@
+{
+  "vectors": [
+    {
+      "name": "tap",
+      "events": [
+        {"kind": "down", "timeMs": 0, "pointers": 1, "x": 0.25, "y": 0.4},
+        {"kind": "up", "timeMs": 100, "pointers": 1, "x": 0.25, "y": 0.4}
+      ],
+      "commands": []
+    },
+    {
+      "name": "delayed-single-tap",
+      "events": [
+        {"kind": "down", "timeMs": 0, "pointers": 1, "x": 0.25, "y": 0.4},
+        {"kind": "up", "timeMs": 100, "pointers": 1, "x": 0.25, "y": 0.4},
+        {"kind": "tick", "timeMs": 581, "pointers": 0, "x": 0.25, "y": 0.4}
+      ],
+      "commands": [
+        {"kind": "click", "x": 0.25, "y": 0.4, "button": "left", "tapCount": 1}
+      ]
+    },
+    {
+      "name": "double-tap",
+      "events": [
+        {"kind": "down", "timeMs": 0, "pointers": 1, "x": 0.3, "y": 0.5},
+        {"kind": "up", "timeMs": 80, "pointers": 1, "x": 0.3, "y": 0.5},
+        {"kind": "down", "timeMs": 220, "pointers": 1, "x": 0.31, "y": 0.5},
+        {"kind": "up", "timeMs": 300, "pointers": 1, "x": 0.31, "y": 0.5}
+      ],
+      "commands": [
+        {"kind": "click", "x": 0.31, "y": 0.5, "button": "left", "tapCount": 2}
+      ]
+    },
+    {
+      "name": "long-press",
+      "events": [
+        {"kind": "down", "timeMs": 0, "pointers": 1, "x": 0.6, "y": 0.2},
+        {"kind": "tick", "timeMs": 701, "pointers": 1, "x": 0.6, "y": 0.2},
+        {"kind": "up", "timeMs": 800, "pointers": 1, "x": 0.6, "y": 0.2}
+      ],
+      "commands": [
+        {"kind": "click", "x": 0.6, "y": 0.2, "button": "right", "tapCount": 1}
+      ]
+    },
+    {
+      "name": "drag",
+      "events": [
+        {"kind": "down", "timeMs": 0, "pointers": 1, "x": 0.1, "y": 0.1},
+        {"kind": "move", "timeMs": 100, "pointers": 1, "x": 0.2, "y": 0.2},
+        {"kind": "move", "timeMs": 150, "pointers": 1, "x": 0.3, "y": 0.25},
+        {"kind": "up", "timeMs": 200, "pointers": 1, "x": 0.3, "y": 0.25}
+      ],
+      "commands": [
+        {"kind": "buttonDown", "x": 0.1, "y": 0.1, "button": "left"},
+        {"kind": "drag", "x": 0.2, "y": 0.2, "button": "left"},
+        {"kind": "drag", "x": 0.3, "y": 0.25, "button": "left"},
+        {"kind": "buttonUp", "x": 0.3, "y": 0.25, "button": "left"}
+      ]
+    },
+    {
+      "name": "two-finger-scroll",
+      "events": [
+        {"kind": "down", "timeMs": 0, "pointers": 1, "x": 0.5, "y": 0.5},
+        {"kind": "pointerDown", "timeMs": 30, "pointers": 2, "x": 0.5, "y": 0.5},
+        {"kind": "move", "timeMs": 60, "pointers": 2, "x": 0.48, "y": 0.42},
+        {"kind": "pointerUp", "timeMs": 90, "pointers": 2, "x": 0.48, "y": 0.42}
+      ],
+      "commands": [
+        {"kind": "scroll", "deltaX": 0.02, "deltaY": 0.08}
+      ]
+    },
+    {
+      "name": "timeout-crossing-second-tap",
+      "events": [
+        {"kind": "down", "timeMs": 0, "pointers": 1, "x": 0.2, "y": 0.2},
+        {"kind": "up", "timeMs": 100, "pointers": 1, "x": 0.2, "y": 0.2},
+        {"kind": "down", "timeMs": 500, "pointers": 1, "x": 0.2, "y": 0.2},
+        {"kind": "up", "timeMs": 620, "pointers": 1, "x": 0.2, "y": 0.2},
+        {"kind": "tick", "timeMs": 1101, "pointers": 0, "x": 0.2, "y": 0.2}
+      ],
+      "commands": [
+        {"kind": "click", "x": 0.2, "y": 0.2, "button": "left", "tapCount": 1},
+        {"kind": "click", "x": 0.2, "y": 0.2, "button": "left", "tapCount": 1}
+      ]
+    },
+    {
+      "name": "distant-second-tap",
+      "events": [
+        {"kind": "down", "timeMs": 0, "pointers": 1, "x": 0.1, "y": 0.1},
+        {"kind": "up", "timeMs": 80, "pointers": 1, "x": 0.1, "y": 0.1},
+        {"kind": "down", "timeMs": 200, "pointers": 1, "x": 0.8, "y": 0.8},
+        {"kind": "up", "timeMs": 280, "pointers": 1, "x": 0.8, "y": 0.8},
+        {"kind": "tick", "timeMs": 761, "pointers": 0, "x": 0.8, "y": 0.8}
+      ],
+      "commands": [
+        {"kind": "click", "x": 0.1, "y": 0.1, "button": "left", "tapCount": 1},
+        {"kind": "click", "x": 0.8, "y": 0.8, "button": "left", "tapCount": 1}
+      ]
+    },
+    {
+      "name": "tap-followed-by-drag",
+      "events": [
+        {"kind": "down", "timeMs": 0, "pointers": 1, "x": 0.1, "y": 0.1},
+        {"kind": "up", "timeMs": 80, "pointers": 1, "x": 0.1, "y": 0.1},
+        {"kind": "down", "timeMs": 200, "pointers": 1, "x": 0.1, "y": 0.1},
+        {"kind": "move", "timeMs": 240, "pointers": 1, "x": 0.3, "y": 0.3},
+        {"kind": "up", "timeMs": 300, "pointers": 1, "x": 0.3, "y": 0.3}
+      ],
+      "commands": [
+        {"kind": "click", "x": 0.1, "y": 0.1, "button": "left", "tapCount": 1},
+        {"kind": "buttonDown", "x": 0.1, "y": 0.1, "button": "left"},
+        {"kind": "drag", "x": 0.3, "y": 0.3, "button": "left"},
+        {"kind": "buttonUp", "x": 0.3, "y": 0.3, "button": "left"}
+      ]
+    },
+    {
+      "name": "cancellation",
+      "events": [
+        {"kind": "down", "timeMs": 0, "pointers": 1, "x": 0.1, "y": 0.1},
+        {"kind": "move", "timeMs": 100, "pointers": 1, "x": 0.3, "y": 0.3},
+        {"kind": "cancel", "timeMs": 120, "pointers": 1, "x": 0.35, "y": 0.35}
+      ],
+      "commands": [
+        {"kind": "buttonDown", "x": 0.1, "y": 0.1, "button": "left"},
+        {"kind": "drag", "x": 0.3, "y": 0.3, "button": "left"},
+        {"kind": "buttonUp", "x": 0.35, "y": 0.35, "button": "left"}
+      ]
+    }
+  ]
+}

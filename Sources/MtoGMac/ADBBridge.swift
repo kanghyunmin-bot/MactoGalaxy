@@ -1,5 +1,7 @@
+import MtoGPlatform
 import CoreGraphics
 import Foundation
+import MtoGCore
 import Network
 
 enum ADBBridgeError: Error, LocalizedError {
@@ -27,6 +29,8 @@ struct ADBBridgeConfiguration {
 
 final class ADBBridge: @unchecked Sendable {
     let configuration: ADBBridgeConfiguration
+    private let selectionLock = NSLock()
+    private var selectedSerial: String?
 
     init(configuration: ADBBridgeConfiguration = .init()) {
         self.configuration = configuration
@@ -35,38 +39,47 @@ final class ADBBridge: @unchecked Sendable {
     func prepare() throws {
         let adb = try resolveADBPath()
         _ = try run(adb: adb, arguments: ["start-server"])
-        try validateDevicePresence(adb: adb)
-        _ = try? run(adb: adb, arguments: ["forward", "--remove", "tcp:\(configuration.hostPort)"])
-        _ = try run(adb: adb, arguments: ["forward", "tcp:\(configuration.hostPort)", "tcp:\(configuration.devicePort)"])
-        try startCompanionApp(adb: adb)
+        let serial = try selectAuthorizedDevice(adb: adb)
+        _ = try? run(adb: adb, arguments: ["-s", serial, "forward", "--remove", "tcp:\(configuration.hostPort)"])
+        _ = try run(adb: adb, arguments: ["-s", serial, "forward", "tcp:\(configuration.hostPort)", "tcp:\(configuration.devicePort)"])
+        try startCompanionApp(adb: adb, serial: serial)
         try waitForForwardedPort(timeoutSeconds: 5)
     }
 
     func validateDevicePresence() throws {
-        let adb = try resolveADBPath()
-        try validateDevicePresence(adb: adb)
+        _ = try selectAuthorizedDevice(adb: try resolveADBPath())
     }
 
-    private func validateDevicePresence(adb: String) throws {
-        let output = try run(adb: adb, arguments: ["devices"])
-        let lines = output
-            .split(separator: "\n")
-            .map(String.init)
-            .filter { $0.contains("\tdevice") }
+    @discardableResult
+    func selectAuthorizedDevice(preferredSerial: String? = nil) throws -> String {
+        try selectAuthorizedDevice(adb: resolveADBPath(), preferredSerial: preferredSerial)
+    }
 
-        guard !lines.isEmpty else {
-            throw ADBBridgeError.invalidOutput("허용된 Android 기기를 찾지 못했습니다. USB 디버깅 허용 팝업을 확인하세요.")
-        }
+    var selectedDeviceSerial: String? {
+        selectionLock.lock(); defer { selectionLock.unlock() }
+        return selectedSerial
     }
 
     func clearForward() throws {
-        let adb = try resolveADBPath()
-        _ = try? run(adb: adb, arguments: ["forward", "--remove", "tcp:\(configuration.hostPort)"])
+        let serial = try requireSelectedSerial()
+        _ = try? run(
+            adb: resolveADBPath(),
+            arguments: ["-s", serial, "forward", "--remove", "tcp:\(configuration.hostPort)"]
+        )
     }
 
     func clearForward(port: UInt16) throws {
-        let adb = try resolveADBPath()
-        _ = try? run(adb: adb, arguments: ["forward", "--remove", "tcp:\(port)"])
+        let serial = try requireSelectedSerial()
+        _ = try? run(
+            adb: resolveADBPath(),
+            arguments: ["-s", serial, "forward", "--remove", "tcp:\(port)"]
+        )
+    }
+
+    func clearExternalDisplayMappings(serial: String, videoPort: UInt16 = 46002, inputPort: UInt16 = 46003) {
+        guard let adb = try? resolveADBPath() else { return }
+        _ = try? run(adb: adb, arguments: ["-s", serial, "forward", "--remove", "tcp:\(videoPort)"])
+        _ = try? run(adb: adb, arguments: ["-s", serial, "reverse", "--remove", "tcp:\(inputPort)"])
     }
 
     func resolvedADBPath() throws -> String {
@@ -75,11 +88,13 @@ final class ADBBridge: @unchecked Sendable {
 
     func runShell(arguments: [String]) throws -> String {
         let adb = try resolveADBPath()
-        return try run(adb: adb, arguments: ["shell"] + arguments)
+        let serial = try selectAuthorizedDevice(adb: adb)
+        return try run(adb: adb, arguments: ["-s", serial, "shell"] + arguments)
     }
 
     func startCompanionApp() throws {
-        try startCompanionApp(adb: try resolveADBPath())
+        let adb = try resolveADBPath()
+        try startCompanionApp(adb: adb, serial: selectAuthorizedDevice(adb: adb))
     }
 
     @discardableResult
@@ -91,41 +106,23 @@ final class ADBBridge: @unchecked Sendable {
         if let firstOutput,
            firstOutput.localizedCaseInsensitiveContains("connected") ||
             firstOutput.localizedCaseInsensitiveContains("already connected") {
+            setSelectedSerial(target)
             return firstOutput
         }
 
         _ = try? run(adb: adb, arguments: ["kill-server"])
         _ = try run(adb: adb, arguments: ["start-server"])
-        return try run(adb: adb, arguments: ["connect", target])
+        let output = try run(adb: adb, arguments: ["connect", target])
+        guard output.localizedCaseInsensitiveContains("connected") else {
+            throw ADBBridgeError.commandFailed(output)
+        }
+        setSelectedSerial(target)
+        return output
     }
 
     func startCompanionApp(serial: String) throws {
+        setSelectedSerial(serial)
         try startCompanionApp(adb: try resolveADBPath(), serial: serial)
-    }
-
-    func startExternalDisplayReceiver(port: UInt16) throws {
-        let adb = try resolveADBPath()
-        _ = try run(adb: adb, arguments: ["start-server"])
-        try validateDevicePresence(adb: adb)
-        _ = try? run(adb: adb, arguments: ["forward", "--remove", "tcp:\(port)"])
-        _ = try run(adb: adb, arguments: ["forward", "tcp:\(port)", "tcp:\(port)"])
-        let output = try run(
-            adb: adb,
-            arguments: [
-                "shell",
-                "am",
-                "start",
-                "-W",
-                "-n",
-                "com.mtog.app/.ExternalDisplayActivity",
-                "--ei",
-                "port",
-                "\(port)"
-            ]
-        )
-        if output.contains("Error") || output.contains("Exception") {
-            throw ADBBridgeError.commandFailed(output)
-        }
     }
 
     func queryDisplaySize() throws -> CGSize {
@@ -153,6 +150,41 @@ final class ADBBridge: @unchecked Sendable {
         }
 
         throw ADBBridgeError.invalidOutput("갤럭시의 Wi-Fi IPv4 주소를 찾지 못했습니다. 태블릿을 개인 Wi-Fi에 연결한 뒤 다시 시도하세요.")
+    }
+
+    private func selectAuthorizedDevice(adb: String, preferredSerial: String? = nil) throws -> String {
+        selectionLock.lock()
+        let existing = selectedSerial
+        selectionLock.unlock()
+        let devices = ADBDeviceParser.parse(try run(adb: adb, arguments: ["devices", "-l"]))
+        do {
+            let selected = try ADBDeviceSelector.select(
+                devices: devices,
+                preferredSerial: preferredSerial ?? existing
+            ).serial
+            setSelectedSerial(selected)
+            return selected
+        } catch let error as ADBDeviceSelectionError {
+            switch error {
+            case .noAuthorizedDevice:
+                throw ADBBridgeError.invalidOutput("허용된 Android 기기를 찾지 못했습니다")
+            case .multipleAuthorized(let serials):
+                throw ADBBridgeError.invalidOutput("여러 Android 기기가 연결됨: \(serials.joined(separator: ", "))")
+            case .preferredUnavailable(let serial):
+                throw ADBBridgeError.invalidOutput("선택한 Android 기기를 사용할 수 없음: \(serial)")
+            }
+        }
+    }
+
+    private func setSelectedSerial(_ serial: String) {
+        selectionLock.lock(); selectedSerial = serial; selectionLock.unlock()
+    }
+
+    private func requireSelectedSerial() throws -> String {
+        guard let serial = selectedDeviceSerial else {
+            throw ADBBridgeError.invalidOutput("정리할 Android 기기 serial이 없습니다")
+        }
+        return serial
     }
 
     private func resolveADBPath() throws -> String {
@@ -206,10 +238,6 @@ final class ADBBridge: @unchecked Sendable {
     }
 
     private func resolveFromWhich() -> String? {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-        task.arguments = ["adb"]
-
         var environment = ProcessInfo.processInfo.environment
         let defaultPath = [
             "/opt/homebrew/bin",
@@ -220,42 +248,38 @@ final class ADBBridge: @unchecked Sendable {
             "/sbin"
         ].joined(separator: ":")
         environment["PATH"] = environment["PATH"].flatMap { $0.isEmpty ? defaultPath : "\($0):\(defaultPath)" } ?? defaultPath
-        task.environment = environment
+        guard let result = try? BoundedProcessExecutor.run(
+            executableURL: URL(fileURLWithPath: "/usr/bin/which"),
+            arguments: ["adb"],
+            environment: environment,
+            timeout: 2
+        ), result.status == 0 else { return nil }
 
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        task.standardError = Pipe()
-        try? task.run()
-        task.waitUntilExit()
-
-        guard task.terminationStatus == 0 else {
-            return nil
-        }
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let data = result.stdout
         let output = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
         return output.isEmpty ? nil : output
     }
 
-    private func startCompanionApp(adb: String, serial: String? = nil) throws {
-        let selector = serial.map { ["-s", $0] } ?? []
-        let launchOutput = try? startBootstrapActivity(
+    private func startCompanionApp(adb: String, serial: String) throws {
+        let selector = ["-s", serial]
+        let launchOutput = try startBootstrapActivity(
             adb: adb,
             selector: selector,
             action: "com.mtog.app.service.START"
         )
 
-        if let launchOutput,
-           launchOutput.contains("Error") || launchOutput.contains("Exception") {
+        if launchOutput.contains("Error") || launchOutput.contains("Exception") {
             throw ADBBridgeError.commandFailed(launchOutput)
         }
     }
 
     @discardableResult
     func requestClipboardSyncService(serial: String? = nil) throws -> String {
-        try startBootstrapActivity(
-            adb: try resolveADBPath(),
-            selector: serial.map { ["-s", $0] } ?? [],
+        let adb = try resolveADBPath()
+        let selected = try selectAuthorizedDevice(adb: adb, preferredSerial: serial)
+        return try startBootstrapActivity(
+            adb: adb,
+            selector: ["-s", selected],
             action: "com.mtog.app.service.SYNC_CLIPBOARD"
         )
     }
@@ -320,22 +344,15 @@ final class ADBBridge: @unchecked Sendable {
 
     @discardableResult
     private func run(adb: String, arguments: [String]) throws -> String {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: adb)
-        process.arguments = arguments
+        let result = try BoundedProcessExecutor.run(
+            executableURL: URL(fileURLWithPath: adb),
+            arguments: arguments,
+            timeout: 15
+        )
+        let out = String(decoding: result.stdout, as: UTF8.self)
+        let err = String(decoding: result.stderr, as: UTF8.self)
 
-        let stdout = Pipe()
-        let stderr = Pipe()
-        process.standardOutput = stdout
-        process.standardError = stderr
-
-        try process.run()
-        process.waitUntilExit()
-
-        let out = String(decoding: stdout.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-        let err = String(decoding: stderr.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-
-        guard process.terminationStatus == 0 else {
+        guard result.status == 0 else {
             throw ADBBridgeError.commandFailed(err.isEmpty ? out : err)
         }
 

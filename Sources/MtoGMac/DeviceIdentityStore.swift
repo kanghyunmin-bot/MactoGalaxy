@@ -1,7 +1,7 @@
 import CryptoKit
 import Foundation
 
-struct SessionIdentitySnapshot {
+struct SessionIdentitySnapshot: Sendable {
     let deviceId: String
     let deviceName: String
     let publicKeyBase64: String

@@ -17,7 +17,6 @@ APP_DIR="$DIST_DIR/$APP_NAME"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
-AOA_HELPER="$ROOT_DIR/.build/tools/aoa-hid-probe"
 STAGING_DIR="$DIST_DIR/macos-dmg"
 DMG_PATH="$DIST_DIR/MtoG-macos.dmg"
 README_PATH="$STAGING_DIR/README.txt"
@@ -28,9 +27,6 @@ mkdir -p "$DIST_DIR"
 
 swift build -c release --scratch-path "$ARM64_SCRATCH" --package-path "$ROOT_DIR"
 swift build -c release --triple x86_64-apple-macosx14.0 --scratch-path "$X64_SCRATCH" --package-path "$ROOT_DIR"
-if [ -x "$ROOT_DIR/scripts/build-aoa-hid-probe.sh" ]; then
-  "$ROOT_DIR/scripts/build-aoa-hid-probe.sh" >/dev/null
-fi
 
 if [ ! -f "$ARM64_BINARY" ] || [ ! -f "$X64_BINARY" ] || [ ! -f "$ARM64_EXTERNAL_WORKER" ] || [ ! -f "$X64_EXTERNAL_WORKER" ]; then
   echo "유니버설 앱 빌드 입력 파일을 찾지 못했습니다" >&2
@@ -40,6 +36,8 @@ fi
 rm -rf "$APP_DIR" "$STAGING_DIR" "$DMG_PATH" "$UNIVERSAL_BINARY" "$UNIVERSAL_EXTERNAL_WORKER"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$STAGING_DIR"
 
+cp "$ROOT_DIR/assets/app-icon/MtoG.icns" "$RESOURCES_DIR/MtoG.icns"
+
 lipo -create "$ARM64_BINARY" "$X64_BINARY" -output "$UNIVERSAL_BINARY"
 lipo -create "$ARM64_EXTERNAL_WORKER" "$X64_EXTERNAL_WORKER" -output "$UNIVERSAL_EXTERNAL_WORKER"
 
@@ -48,9 +46,16 @@ chmod +x "$MACOS_DIR/MtoGMac"
 cp "$UNIVERSAL_EXTERNAL_WORKER" "$MACOS_DIR/MtoGExternalDisplayWorker"
 chmod +x "$MACOS_DIR/MtoGExternalDisplayWorker"
 
-if [ -x "$AOA_HELPER" ]; then
-  cp "$AOA_HELPER" "$RESOURCES_DIR/aoa-hid-probe"
-  chmod +x "$RESOURCES_DIR/aoa-hid-probe"
+
+# Optional pinned server resource; new Swift platform modules are statically linked by SwiftPM.
+if [ -n "${MTOG_SCRCPY_SERVER:-}" ]; then
+  server_hash=$(shasum -a 256 "$MTOG_SCRCPY_SERVER" | cut -d ' ' -f 1)
+  if [ "$server_hash" != "8588238c9a5a00aa542906b6ec7e6d5541d9ffb9b5d0f6e1bc0e365e2303079e" ]; then
+    echo "scrcpy-server must match pinned 3.3.4 SHA-256" >&2
+    exit 1
+  fi
+  cp "$MTOG_SCRCPY_SERVER" "$RESOURCES_DIR/scrcpy-server-3.3.4"
+  cp "$ROOT_DIR/docs/third-party/scrcpy-LICENSE.txt" "$RESOURCES_DIR/scrcpy-LICENSE.txt"
 fi
 
 cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
@@ -66,6 +71,8 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
     <string>com.mtog.mac</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
+    <key>CFBundleIconFile</key>
+    <string>MtoG.icns</string>
     <key>CFBundleName</key>
     <string>MtoG</string>
     <key>CFBundleDisplayName</key>
@@ -73,9 +80,9 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.3</string>
+    <string>0.2.0</string>
     <key>CFBundleVersion</key>
-    <string>4</string>
+    <string>6</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>NSHighResolutionCapable</key>
@@ -93,10 +100,14 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 PLIST
 
 if [ "$SIGN_IDENTITY" = "-" ]; then
-  codesign --force --deep --sign - "$APP_DIR"
+  codesign --force --sign - --identifier com.mtog.mac.display-worker "$MACOS_DIR/MtoGExternalDisplayWorker"
+  codesign --force --sign - --identifier com.mtog.mac "$APP_DIR"
 else
-  codesign --force --deep --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR"
+  codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$MACOS_DIR/MtoGExternalDisplayWorker"
+  codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR"
 fi
+
+codesign --verify --deep --strict "$APP_DIR"
 
 cp -R "$APP_DIR" "$STAGING_DIR/$APP_NAME"
 ln -s /Applications "$STAGING_DIR/Applications"

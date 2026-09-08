@@ -1,0 +1,38 @@
+[
+  {
+    "test": "production_mac_to_galaxy_korean_emoji",
+    "pass": true
+  },
+  {
+    "test": "production_galaxy_to_mac_korean_emoji",
+    "pass": true
+  },
+  {
+    "test": "production_mac_to_galaxy_url",
+    "pass": true
+  },
+  {
+    "test": "production_galaxy_to_mac_url",
+    "pass": true
+  },
+  {
+    "test": "production_mac_to_galaxy_size_boundary",
+    "pass": true
+  },
+  {
+    "test": "production_galaxy_to_mac_size_boundary",
+    "pass": false
+  },
+  {
+    "test": "enabled_reconnect_resumes",
+    "pass": true
+  },
+  {
+    "test": "user_stop_blocks_sync",
+    "pass": true
+  },
+  {
+    "test": "samsung_keyboard_retained",
+    "pass": true
+  }
+]

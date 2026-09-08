@@ -1,0 +1,15 @@
+{
+  "deviceId": "mac-fixture",
+  "deviceName": "Fixture Mac",
+  "id": "00000000-0000-0000-0000-000000000001",
+  "payload": {
+    "nonce": "fixture-nonce",
+    "role": "mac-controller",
+    "sessionToken": "fixture-token"
+  },
+  "requiresAck": false,
+  "sentAt": "2026-09-01T00:00:00Z",
+  "sequenceNo": 1,
+  "sessionId": "00000000-0000-0000-0000-000000000002",
+  "type": "hello"
+}
