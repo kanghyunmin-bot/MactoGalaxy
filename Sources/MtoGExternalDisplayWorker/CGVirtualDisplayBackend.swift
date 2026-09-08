@@ -6,7 +6,7 @@ import ObjectiveC.runtime
 final class CGVirtualDisplayBackend {
     private var display: NSObject?
 
-    func create() throws -> CGDirectDisplayID {
+    func create(width: Int = 1920, height: Int = 1200) throws -> CGDirectDisplayID {
         guard let descriptorClass = NSClassFromString("CGVirtualDisplayDescriptor") as? NSObject.Type,
               let displayClass = NSClassFromString("CGVirtualDisplay"),
               let settingsClass = NSClassFromString("CGVirtualDisplaySettings") as? NSObject.Type,
@@ -19,8 +19,8 @@ final class CGVirtualDisplayBackend {
         descriptor.setValue(930011, forKey: "serialNum")
         descriptor.setValue(930011, forKey: "serialNumber")
         descriptor.setValue("MtoG Galaxy Tab", forKey: "name")
-        descriptor.setValue(1920, forKey: "maxPixelsWide")
-        descriptor.setValue(1200, forKey: "maxPixelsHigh")
+        descriptor.setValue(width, forKey: "maxPixelsWide")
+        descriptor.setValue(height, forKey: "maxPixelsHigh")
         descriptor.setValue(NSValue(size: CGSize(width: 325, height: 203)), forKey: "sizeInMillimeters")
         descriptor.setValue(NSValue(point: CGPoint(x: 0.3125, y: 0.3291)), forKey: "whitePoint")
         descriptor.setValue(NSValue(point: CGPoint(x: 0.1494, y: 0.0557)), forKey: "bluePrimary")
@@ -32,8 +32,8 @@ final class CGVirtualDisplayBackend {
         self.display = display
         let settings = settingsClass.init()
         let mode = modeClass.init()
-        mode.setValue(1920, forKey: "width")
-        mode.setValue(1200, forKey: "height")
+        mode.setValue(width, forKey: "width")
+        mode.setValue(height, forKey: "height")
         mode.setValue(60.0, forKey: "refreshRate")
         settings.setValue([mode], forKey: "modes")
         settings.setValue(0, forKey: "rotation")

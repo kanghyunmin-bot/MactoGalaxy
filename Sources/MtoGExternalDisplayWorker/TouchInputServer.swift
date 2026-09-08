@@ -3,30 +3,25 @@ import Darwin
 import Foundation
 
 private struct TouchInputMessage {
-    let action: String
-    let pointerCount: Int
-    let x: CGFloat
-    let y: CGFloat
-    let span: CGFloat?
+    let sequence: UInt64
+    let kind: String
+    let x: CGFloat?
+    let y: CGFloat?
+    let deltaX: CGFloat?
+    let deltaY: CGFloat?
+    let button: String?
+    let tapCount: Int?
 }
 
 private struct TouchInputState {
+    var highestSequence: UInt64 = 0
     var isMouseDown = false
-    var lastScrollPoint: CGPoint?
-    var lastPinchSpan: CGFloat?
-    var pendingDownPoint: CGPoint?
-    var pendingDownTime: Date?
-    var longPressFired = false
-    var lastTapPoint: CGPoint?
-    var lastTapTime: Date?
+    var lastMousePoint: CGPoint?
 }
 
 final class TouchInputServer: @unchecked Sendable {
     private let inputPort: UInt16
-    private let tapMoveTolerance: CGFloat = 12
-    private let doubleTapTolerance: CGFloat = 42
-    private let tapMaxDuration: TimeInterval = 0.35
-    private let doubleTapInterval: TimeInterval = 0.48
+    private let controlSessionID: UUID
     private let stateLock = NSLock()
     private var inputServerFD: Int32 = -1
     private var inputClientFD: Int32 = -1
@@ -35,8 +30,9 @@ final class TouchInputServer: @unchecked Sendable {
     private var threadFinished: DispatchSemaphore?
     private var touchInputState = TouchInputState()
 
-    init(port: UInt16) {
+    init(port: UInt16, controlSessionID: UUID) {
         inputPort = port
+        self.controlSessionID = controlSessionID
     }
 
     func start(displayID: CGDirectDisplayID) throws {
@@ -163,23 +159,40 @@ final class TouchInputServer: @unchecked Sendable {
     private func handleTouchInputLine(_ data: Data, displayID: CGDirectDisplayID) {
         guard !data.isEmpty,
               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              (object["type"] as? String) == "touch",
-              let action = object["action"] as? String,
-              let x = number(object["x"]),
-              let y = number(object["y"]) else {
+              (object["type"] as? String) == "gestureCommand",
+              let sessionValue = object["sessionId"] as? String,
+              UUID(uuidString: sessionValue) == controlSessionID,
+              let sequence = uint64(object["sequence"]),
+              sequence > touchInputState.highestSequence,
+              let kind = object["kind"] as? String else {
             return
         }
 
-        let pointerCount = Int(number(object["pointers"]) ?? 1)
-        let span = number(object["span"]).map { CGFloat($0) }
         let message = TouchInputMessage(
-            action: action,
-            pointerCount: max(pointerCount, 1),
-            x: CGFloat(x).clamped(to: 0 ... 1),
-            y: CGFloat(y).clamped(to: 0 ... 1),
-            span: span
+            sequence: sequence,
+            kind: kind,
+            x: number(object["x"]).map { CGFloat($0) },
+            y: number(object["y"]).map { CGFloat($0) },
+            deltaX: number(object["deltaX"]).map { CGFloat($0) },
+            deltaY: number(object["deltaY"]).map { CGFloat($0) },
+            button: object["button"] as? String,
+            tapCount: integer(object["tapCount"])
         )
+        guard isValid(message) else { return }
+        touchInputState.highestSequence = sequence
         handleTouchInput(message, displayID: displayID)
+    }
+
+    private func uint64(_ value: Any?) -> UInt64? {
+        guard let number = value as? NSNumber else { return nil }
+        let result = number.uint64Value
+        return result > 0 && NSNumber(value: result) == number ? result : nil
+    }
+
+    private func integer(_ value: Any?) -> Int? {
+        guard let number = value as? NSNumber else { return nil }
+        let result = number.intValue
+        return NSNumber(value: result) == number ? result : nil
     }
 
     private func number(_ value: Any?) -> Double? {
@@ -196,137 +209,64 @@ final class TouchInputServer: @unchecked Sendable {
     }
 
     private func handleTouchInput(_ message: TouchInputMessage, displayID: CGDirectDisplayID) {
-        let point = displayPoint(normalizedX: message.x, normalizedY: message.y, displayID: displayID)
-        let action = message.action
-
-        if message.pointerCount >= 2 {
-            if touchInputState.isMouseDown {
-                postMouse(type: .leftMouseUp, point: point)
-                touchInputState.isMouseDown = false
-            }
-            handleTwoFingerTouch(message, point: point)
-            return
-        }
-
-        touchInputState.lastScrollPoint = nil
-        touchInputState.lastPinchSpan = nil
-
-        switch action {
+        switch message.kind {
         case "click":
+            guard let point = displayPoint(for: message, displayID: displayID) else { return }
+            let button: CGMouseButton = message.button == "right" ? .right : .left
             moveCursor(to: point)
-            postClick(button: .left, point: point)
-            clearPendingSingleTouch()
-        case "right_click":
+            postClick(button: button, point: point, tapCount: message.tapCount ?? 1)
+        case "buttonDown":
+            guard !touchInputState.isMouseDown,
+                  let point = displayPoint(for: message, displayID: displayID) else { return }
             moveCursor(to: point)
-            postClick(button: .right, point: point)
-            clearPendingSingleTouch()
-        case "down":
-            moveCursor(to: point)
-            touchInputState.pendingDownPoint = point
-            touchInputState.pendingDownTime = Date()
-            touchInputState.longPressFired = false
-        case "move":
-            moveCursor(to: point)
-            handleSingleFingerMove(point)
-        case "up", "cancel":
-            moveCursor(to: point)
-            if touchInputState.isMouseDown {
-                postMouse(type: .leftMouseUp, point: point)
-                touchInputState.isMouseDown = false
-            }
-            clearPendingSingleTouch()
-        default:
-            break
-        }
-    }
-
-    private func handleSingleFingerMove(_ point: CGPoint) {
-        guard let downPoint = touchInputState.pendingDownPoint else {
-            postMouse(type: .mouseMoved, point: point)
-            return
-        }
-
-        if touchInputState.longPressFired {
-            return
-        }
-
-        if touchInputState.isMouseDown {
+            postMouse(type: .leftMouseDown, point: point)
+            touchInputState.isMouseDown = true
+            touchInputState.lastMousePoint = point
+        case "drag":
+            guard touchInputState.isMouseDown,
+                  let point = displayPoint(for: message, displayID: displayID) else { return }
             postMouse(type: .leftMouseDragged, point: point)
-            return
-        }
-
-        guard distance(from: downPoint, to: point) > tapMoveTolerance else {
-            return
-        }
-
-        postMouse(type: .leftMouseDown, point: downPoint)
-        touchInputState.isMouseDown = true
-        postMouse(type: .leftMouseDragged, point: point)
-    }
-
-    private func handleTapCandidate(_ point: CGPoint) {
-        guard let downPoint = touchInputState.pendingDownPoint,
-              let downTime = touchInputState.pendingDownTime else {
-            return
-        }
-
-        let duration = Date().timeIntervalSince(downTime)
-        guard duration <= tapMaxDuration,
-              distance(from: downPoint, to: point) <= tapMoveTolerance else {
-            return
-        }
-
-        if let lastPoint = touchInputState.lastTapPoint,
-           let lastTime = touchInputState.lastTapTime,
-           Date().timeIntervalSince(lastTime) <= doubleTapInterval,
-           distance(from: lastPoint, to: point) <= doubleTapTolerance {
-            postClick(button: .left, point: point)
-            touchInputState.lastTapPoint = nil
-            touchInputState.lastTapTime = nil
-        } else {
-            touchInputState.lastTapPoint = point
-            touchInputState.lastTapTime = Date()
-        }
-    }
-
-    private func handleLongPress(_ point: CGPoint) {
-        guard let downPoint = touchInputState.pendingDownPoint,
-              !touchInputState.isMouseDown,
-              !touchInputState.longPressFired,
-              distance(from: downPoint, to: point) <= doubleTapTolerance else {
-            return
-        }
-
-        moveCursor(to: point)
-        postClick(button: .right, point: point)
-        touchInputState.longPressFired = true
-        touchInputState.lastTapPoint = nil
-        touchInputState.lastTapTime = nil
-    }
-
-    private func clearPendingSingleTouch() {
-        touchInputState.pendingDownPoint = nil
-        touchInputState.pendingDownTime = nil
-        touchInputState.longPressFired = false
-    }
-
-    private func handleTwoFingerTouch(_ message: TouchInputMessage, point: CGPoint) {
-        switch message.action {
-        case "down", "pointer_down":
-            touchInputState.lastScrollPoint = point
-            touchInputState.lastPinchSpan = message.span
-        case "move":
-            if let previous = touchInputState.lastScrollPoint {
-                postScroll(from: previous, to: point)
-            }
-            touchInputState.lastScrollPoint = point
-            touchInputState.lastPinchSpan = message.span
-        case "up", "cancel", "pointer_up":
-            touchInputState.lastScrollPoint = nil
-            touchInputState.lastPinchSpan = nil
+            touchInputState.lastMousePoint = point
+        case "buttonUp":
+            guard touchInputState.isMouseDown,
+                  let point = displayPoint(for: message, displayID: displayID) else { return }
+            postMouse(type: .leftMouseUp, point: point)
+            touchInputState.isMouseDown = false
+            touchInputState.lastMousePoint = point
+        case "scroll":
+            let bounds = CGDisplayBounds(displayID)
+            let deltaX = (message.deltaX ?? 0) * bounds.width
+            let deltaY = (message.deltaY ?? 0) * bounds.height
+            postScroll(deltaX: deltaX, deltaY: deltaY)
         default:
             break
         }
+    }
+
+    private func isValid(_ message: TouchInputMessage) -> Bool {
+        let validPoint = message.x.map { $0.isFinite && (0 ... 1).contains($0) } == true &&
+            message.y.map { $0.isFinite && (0 ... 1).contains($0) } == true
+        switch message.kind {
+        case "click":
+            return validPoint && ["left", "right"].contains(message.button ?? "") &&
+                (1 ... 2).contains(message.tapCount ?? 0)
+        case "buttonDown", "drag", "buttonUp":
+            return validPoint && message.button == "left"
+        case "scroll":
+            guard let deltaX = message.deltaX, let deltaY = message.deltaY else { return false }
+            return deltaX.isFinite && deltaY.isFinite && abs(deltaX) <= 1 && abs(deltaY) <= 1
+        default:
+            return false
+        }
+    }
+
+    private func displayPoint(for message: TouchInputMessage, displayID: CGDirectDisplayID) -> CGPoint? {
+        guard let x = message.x, let y = message.y else { return nil }
+        return displayPoint(
+            normalizedX: x.clamped(to: 0 ... 1),
+            normalizedY: y.clamped(to: 0 ... 1),
+            displayID: displayID
+        )
     }
 
     private func displayPoint(normalizedX: CGFloat, normalizedY: CGFloat, displayID: CGDirectDisplayID) -> CGPoint {
@@ -345,26 +285,30 @@ final class TouchInputServer: @unchecked Sendable {
         ])
     }
 
-    private func postClick(button: CGMouseButton, point: CGPoint) {
+    private func postClick(button: CGMouseButton, point: CGPoint, tapCount: Int) {
         let downType: CGEventType = button == .right ? .rightMouseDown : .leftMouseDown
         let upType: CGEventType = button == .right ? .rightMouseUp : .leftMouseUp
-        postMouse(type: downType, point: point, button: button)
-        Thread.sleep(forTimeInterval: 0.025)
-        postMouse(type: upType, point: point, button: button)
+        for clickState in 1 ... tapCount {
+            postMouse(type: downType, point: point, button: button, clickState: clickState)
+            Thread.sleep(forTimeInterval: 0.025)
+            postMouse(type: upType, point: point, button: button, clickState: clickState)
+        }
     }
 
-    private func postMouse(type: CGEventType, point: CGPoint, button: CGMouseButton = .left) {
+    private func postMouse(
+        type: CGEventType,
+        point: CGPoint,
+        button: CGMouseButton = .left,
+        clickState: Int = 0
+    ) {
         emitInput([
             "kind": "mouse",
             "event": mouseEventName(for: type),
             "button": button == .right ? "right" : "left",
+            "clickState": clickState,
             "x": point.x,
             "y": point.y
         ])
-    }
-
-    private func distance(from start: CGPoint, to end: CGPoint) -> CGFloat {
-        hypot(end.x - start.x, end.y - start.y)
     }
 
     private func mouseEventName(for type: CGEventType) -> String {
@@ -397,9 +341,7 @@ final class TouchInputServer: @unchecked Sendable {
         fflush(stdout)
     }
 
-    private func postScroll(from previous: CGPoint, to current: CGPoint) {
-        let deltaX = previous.x - current.x
-        let deltaY = previous.y - current.y
+    private func postScroll(deltaX: CGFloat, deltaY: CGFloat) {
         let gain: CGFloat = 1.35
         let wheelX = Int32((deltaX * gain).rounded())
         let wheelY = Int32((deltaY * gain).rounded())
@@ -415,9 +357,10 @@ final class TouchInputServer: @unchecked Sendable {
     private func releaseMouseIfNeeded(displayID: CGDirectDisplayID) {
         guard touchInputState.isMouseDown else { return }
         let bounds = CGDisplayBounds(displayID)
-        let point = CGPoint(x: bounds.midX, y: bounds.midY)
+        let point = touchInputState.lastMousePoint ?? CGPoint(x: bounds.midX, y: bounds.midY)
         postMouse(type: .leftMouseUp, point: point)
         touchInputState.isMouseDown = false
+        touchInputState.lastMousePoint = point
     }
 
     private func currentServerFD() -> Int32 {
@@ -453,7 +396,7 @@ final class TouchInputServer: @unchecked Sendable {
             Darwin.shutdown(serverFD, SHUT_RDWR)
             Darwin.close(serverFD)
         }
-        finished?.wait()
+        _ = finished?.wait(timeout: .now() + 2)
         stateLock.lock()
         inputThread = nil
         threadFinished = nil

@@ -11,8 +11,8 @@ printf 'target_resolution=2560x1600\n'
 printf 'target_fps=60\n'
 printf 'codec=hardware-h264-required,hardware-hevc-if-available\n'
 printf 'bitrate=resolution-derived,max_40000000bps\n'
-printf 'queue=latest-frame\n'
+printf 'mode=12-frame-local-batch-not-realtime\n'
 printf 'device_latency=NOT_MEASURED\n'
 printf 'device_drop_rate=NOT_MEASURED\n'
 
-/usr/bin/time -p swift test --filter VideoToolboxRoundTripTests
+swift run -c release MtoGVideoBenchmark

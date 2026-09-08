@@ -9,6 +9,11 @@ final class EncodedFramePump: @unchecked Sendable {
     private var buffer = LatestEncodedFrameBuffer()
     private var drainScheduled = false
 
+    var needsKeyframe: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return buffer.needsKeyframe
+    }
+
     var droppedFrames: Int {
         lock.lock(); defer { lock.unlock() }
         return buffer.droppedFrames

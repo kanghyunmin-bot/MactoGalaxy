@@ -32,6 +32,16 @@
       "category": "video",
       "semanticPath": "video/h264-delta.json",
       "framePath": "video/h264-delta.packet"
+    },
+    {
+      "name": "input-geometry",
+      "category": "input",
+      "semanticPath": "input/geometry.json"
+    },
+    {
+      "name": "input-gestures",
+      "category": "input",
+      "semanticPath": "input/gestures.json"
     }
   ]
 }

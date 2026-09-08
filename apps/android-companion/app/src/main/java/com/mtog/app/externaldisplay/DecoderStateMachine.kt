@@ -27,7 +27,7 @@ sealed class DecoderCommand {
     data object Reject : DecoderCommand()
 }
 
-class DecoderStateMachine {
+class DecoderStateMachine(private val expectedSessionID: UUID? = null) {
     var state: DecoderState = DecoderState.WaitingSurface
         private set
     private var surfaceAvailable = false
@@ -71,6 +71,7 @@ class DecoderStateMachine {
 
     fun onPacket(packet: VideoPacket): DecoderCommand {
         if (state == DecoderState.Stopped || state == DecoderState.Failed) return DecoderCommand.Reject
+        if (expectedSessionID != null && packet.sessionID != expectedSessionID) return DecoderCommand.Reject
         if (packet.kind == VideoPacketKind.Config) {
             if (fallbackPending && packet.codec != VideoCodec.H264) return DecoderCommand.Reject
             if (packet.sessionID in retiredSessions) return DecoderCommand.Reject

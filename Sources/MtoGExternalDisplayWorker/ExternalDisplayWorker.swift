@@ -6,18 +6,34 @@ import MtoGMedia
 final class ExternalDisplayWorker: @unchecked Sendable {
     private let videoPort: UInt16 = 46002
     private let inputPort: UInt16 = 46003
-    private let width = 1920
-    private let height = 1200
+    private let width: Int
+    private let height: Int
+    private let preferredCodec: VideoCodec?
     private let framesPerSecond = 60
+    private let selectedSerial: String
+    private let controlSessionID: UUID
     private let runState = WorkerRunState()
     private var signalSource: DispatchSourceSignal?
+
+    init(selectedSerial: String, controlSessionID: UUID, width: Int = 1920, height: Int = 1200, preferredCodec: VideoCodec? = nil) {
+        self.width = width
+        self.height = height
+        self.preferredCodec = preferredCodec
+        self.selectedSerial = selectedSerial
+        self.controlSessionID = controlSessionID
+    }
 
     func run() -> Int32 {
         signal(SIGPIPE, SIG_IGN)
         installSignalHandler()
-        let adb = WorkerADBBridge(videoPort: videoPort, inputPort: inputPort)
+        let adb = WorkerADBBridge(
+            videoPort: videoPort,
+            inputPort: inputPort,
+            serial: selectedSerial,
+            controlSessionID: controlSessionID
+        )
         let backend = CGVirtualDisplayBackend()
-        let touch = TouchInputServer(port: inputPort)
+        let touch = TouchInputServer(port: inputPort, controlSessionID: controlSessionID)
         let capture = ScreenCaptureSource()
         var sender: VideoStreamSender?
         var pump: EncodedFramePump?
@@ -27,10 +43,16 @@ final class ExternalDisplayWorker: @unchecked Sendable {
             workerStatus("Starting Galaxy external display receiver")
             try adb.startReceiver()
             workerStatus("Creating isolated Mac virtual monitor")
-            let displayID = try backend.create()
+            let displayID = try backend.create(width: width, height: height)
             try touch.start(displayID: displayID)
 
-            let streamSender = VideoStreamSender(port: videoPort, codec: .h264, width: width, height: height)
+            let streamSender = VideoStreamSender(
+                port: videoPort,
+                codec: .h264,
+                width: width,
+                height: height,
+                sessionID: controlSessionID
+            )
             sender = streamSender
             try streamSender.connect(timeoutSeconds: 6)
             let receiverCapabilities = try streamSender.receiveCapabilities(timeoutSeconds: 5)
@@ -89,8 +111,11 @@ final class ExternalDisplayWorker: @unchecked Sendable {
                     encoder = activeEncoder
                     reportStreaming(negotiated)
                 }
-                if runState.takeKeyframeRequest() { activeEncoder.requestKeyframe() }
-                guard let frame = capture.queue.take(timeout: 0.1) else { continue }
+                if runState.takeKeyframeRequest() || framePump.needsKeyframe { activeEncoder.requestKeyframe() }
+                guard let frame = capture.queue.take(timeout: 0.1) else {
+                    if let error = capture.queue.failure { throw error }
+                    continue
+                }
                 do { try activeEncoder.encode(frame) } catch { runState.fail(error) }
             }
             if let failure = runState.failure { throw failure }
@@ -133,7 +158,7 @@ final class ExternalDisplayWorker: @unchecked Sendable {
     }
 
     private func availableHardwareCodecs() -> [VideoCodec] {
-        [.hevc, .h264].filter {
+        (preferredCodec.map { [$0] } ?? [.hevc, .h264]).filter {
             VideoToolboxCodecSupport.hardwareStatus(for: $0, width: width, height: height) == .available
         }
     }
@@ -155,7 +180,7 @@ final class ExternalDisplayWorker: @unchecked Sendable {
 
     private func reportStreaming(_ negotiated: NegotiatedCodec) {
         workerStatus(
-            "Galaxy external display streaming \(negotiated.codec.rawValue) " +
+            "Mac capture/encoder ready; Galaxy rendered output unconfirmed: \(negotiated.codec.rawValue) " +
             "\(negotiated.width)x\(negotiated.height) at target \(negotiated.framesPerSecond) fps"
         )
     }

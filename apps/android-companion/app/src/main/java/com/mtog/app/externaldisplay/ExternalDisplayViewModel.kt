@@ -30,10 +30,10 @@ data class ExternalDisplayUiState(
     val lastFrameTimeMs: Long? = null
 )
 
-class ExternalDisplayViewModel(private val port: Int) : ViewModel() {
-    private val receiver = VideoStreamReceiver(port)
+class ExternalDisplayViewModel(private val port: Int, controlSessionID: java.util.UUID) : ViewModel() {
+    private val receiver = VideoStreamReceiver(port, controlSessionID)
     private val decoder = MediaCodecVideoDecoder()
-    private val machine = DecoderStateMachine()
+    private val machine = DecoderStateMachine(controlSessionID)
     private val mutex = Mutex()
     private val _state = MutableStateFlow(ExternalDisplayUiState())
     val state: StateFlow<ExternalDisplayUiState> = _state
@@ -201,6 +201,7 @@ class ExternalDisplayViewModel(private val port: Int) : ViewModel() {
         val now = SystemClock.elapsedRealtime()
         val elapsed = now - frameWindowStartMs
         if (elapsed >= 1_000) {
+            android.util.Log.i("MtoGVideo", "render fps=${framesInWindow * 1000L / elapsed} bitrate=${bytesInWindow * 8000L / elapsed} dropped=${_state.value.droppedFrames} codec=${_state.value.codec} size=${_state.value.width}x${_state.value.height}")
             _state.update {
                 it.copy(
                     status = "외장 화면 전송 중",
@@ -247,9 +248,13 @@ class ExternalDisplayViewModel(private val port: Int) : ViewModel() {
         super.onCleared()
     }
 
-    class Factory(private val port: Int) : ViewModelProvider.Factory {
+    class Factory(
+        private val port: Int,
+        private val controlSessionID: java.util.UUID
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = ExternalDisplayViewModel(port) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T =
+            ExternalDisplayViewModel(port, controlSessionID) as T
     }
 }
 

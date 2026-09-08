@@ -1,13 +1,19 @@
+import MtoGPlatform
 import Foundation
+import MtoGCore
 
 final class WorkerADBBridge {
     private let videoPort: UInt16
     private let inputPort: UInt16
+    private let serial: String
+    private let controlSessionID: UUID
     private var adbPath: String?
 
-    init(videoPort: UInt16, inputPort: UInt16) {
+    init(videoPort: UInt16, inputPort: UInt16, serial: String, controlSessionID: UUID) {
         self.videoPort = videoPort
         self.inputPort = inputPort
+        self.serial = serial
+        self.controlSessionID = controlSessionID
     }
 
     func startReceiver() throws {
@@ -15,15 +21,17 @@ final class WorkerADBBridge {
         adbPath = adb
         _ = try run(adb: adb, arguments: ["start-server"])
         try validateDevicePresence(adb: adb)
-        _ = try? run(adb: adb, arguments: ["forward", "--remove", "tcp:\(videoPort)"])
-        _ = try run(adb: adb, arguments: ["forward", "tcp:\(videoPort)", "tcp:\(videoPort)"])
-        _ = try? run(adb: adb, arguments: ["reverse", "--remove", "tcp:\(inputPort)"])
-        _ = try run(adb: adb, arguments: ["reverse", "tcp:\(inputPort)", "tcp:\(inputPort)"])
+        _ = try? run(adb: adb, arguments: ["-s", serial, "forward", "--remove", "tcp:\(videoPort)"])
+        _ = try run(adb: adb, arguments: ["-s", serial, "forward", "tcp:\(videoPort)", "tcp:\(videoPort)"])
+        _ = try? run(adb: adb, arguments: ["-s", serial, "reverse", "--remove", "tcp:\(inputPort)"])
+        _ = try run(adb: adb, arguments: ["-s", serial, "reverse", "tcp:\(inputPort)", "tcp:\(inputPort)"])
         let output = try run(
             adb: adb,
             arguments: [
-                "shell", "am", "start", "-W", "-n", "com.mtog.app/.ExternalDisplayActivity",
-                "--ei", "port", "\(videoPort)", "--ei", "inputPort", "\(inputPort)"
+                "-s", serial, "shell", "am", "start", "-W", "-n", "com.mtog.app/.ExternalDisplayActivity",
+                "--ei", "port", "\(videoPort)",
+                "--ei", "inputPort", "\(inputPort)",
+                "--es", "sessionId", controlSessionID.uuidString
             ]
         )
         if output.contains("Error") || output.contains("Exception") {
@@ -33,14 +41,14 @@ final class WorkerADBBridge {
 
     func stop() {
         guard let adb = adbPath else { return }
-        _ = try? run(adb: adb, arguments: ["forward", "--remove", "tcp:\(videoPort)"])
-        _ = try? run(adb: adb, arguments: ["reverse", "--remove", "tcp:\(inputPort)"])
+        _ = try? run(adb: adb, arguments: ["-s", serial, "forward", "--remove", "tcp:\(videoPort)"])
+        _ = try? run(adb: adb, arguments: ["-s", serial, "reverse", "--remove", "tcp:\(inputPort)"])
         adbPath = nil
     }
 
     private func validateDevicePresence(adb: String) throws {
-        let output = try run(adb: adb, arguments: ["devices"])
-        guard output.split(separator: "\n").contains(where: { $0.contains("\tdevice") }) else {
+        let output = try run(adb: adb, arguments: ["-s", serial, "get-state"])
+        guard output.trimmingCharacters(in: .whitespacesAndNewlines) == "device" else {
             throw WorkerError.deviceMissing
         }
     }
@@ -65,18 +73,14 @@ final class WorkerADBBridge {
 
     @discardableResult
     private func run(adb: String, arguments: [String]) throws -> String {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: adb)
-        process.arguments = arguments
-        let output = Pipe()
-        let error = Pipe()
-        process.standardOutput = output
-        process.standardError = error
-        try process.run()
-        process.waitUntilExit()
-        let stdout = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-        let stderr = String(decoding: error.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-        guard process.terminationStatus == 0 else {
+        let result = try BoundedProcessExecutor.run(
+            executableURL: URL(fileURLWithPath: adb),
+            arguments: arguments,
+            timeout: 15
+        )
+        let stdout = String(decoding: result.stdout, as: UTF8.self)
+        let stderr = String(decoding: result.stderr, as: UTF8.self)
+        guard result.status == 0 else {
             throw WorkerError.adbFailed(stderr.isEmpty ? stdout : stderr)
         }
         return stdout

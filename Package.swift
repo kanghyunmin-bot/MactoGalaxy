@@ -19,6 +19,11 @@ let package = Package(
         )
     ],
     targets: [
+        .testTarget(name: "MtoGMacTests", dependencies: ["MtoGMac", .product(name: "Testing", package: "swift-testing")]),
+        .testTarget(name: "MtoGWorkerTests", dependencies: ["MtoGExternalDisplayWorker", "MtoGCore", .product(name: "Testing", package: "swift-testing")]),
+        .executableTarget(name: "MtoGVideoBenchmark", dependencies: ["MtoGCore", "MtoGMedia"]),
+        .target(name: "MtoGPlatform", dependencies: ["MtoGCore"]),
+        .testTarget(name: "MtoGPlatformTests", dependencies: ["MtoGPlatform", .product(name: "Testing", package: "swift-testing")]),
         .target(
             name: "MtoGCore",
             path: "Sources/MtoGCore"
@@ -30,12 +35,12 @@ let package = Package(
         ),
         .executableTarget(
             name: "MtoGMac",
-            dependencies: ["MtoGCore"],
+            dependencies: ["MtoGCore", "MtoGPlatform"],
             path: "Sources/MtoGMac"
         ),
         .executableTarget(
             name: "MtoGExternalDisplayWorker",
-            dependencies: ["MtoGCore", "MtoGMedia"],
+            dependencies: ["MtoGCore", "MtoGMedia", "MtoGPlatform"],
             path: "Sources/MtoGExternalDisplayWorker"
         ),
         .testTarget(

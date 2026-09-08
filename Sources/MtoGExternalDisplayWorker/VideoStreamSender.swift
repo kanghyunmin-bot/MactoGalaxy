@@ -8,7 +8,7 @@ final class VideoStreamSender: @unchecked Sendable {
     private var codec: VideoCodec
     private var width: Int
     private var height: Int
-    private let sessionID = UUID()
+    private let sessionID: UUID
     private var sequence: UInt64 = 0
     private var socketFD: Int32 = -1
     private var sentConfig = false
@@ -18,11 +18,12 @@ final class VideoStreamSender: @unchecked Sendable {
     private var controlFinished: DispatchSemaphore?
     private var readingControls = false
 
-    init(port: UInt16, codec: VideoCodec, width: Int, height: Int) {
+    init(port: UInt16, codec: VideoCodec, width: Int, height: Int, sessionID: UUID) {
         self.port = port
         self.codec = codec
         self.width = width
         self.height = height
+        self.sessionID = sessionID
     }
 
     func connect(timeoutSeconds: TimeInterval) throws {
@@ -42,14 +43,31 @@ final class VideoStreamSender: @unchecked Sendable {
 
     func receiveCapabilities(timeoutSeconds: TimeInterval) throws -> CodecCapabilities {
         let deadline = Date().addingTimeInterval(timeoutSeconds)
-        let parser = BoundedVideoParser()
+        var parser = BoundedVideoParser()
         var bytes = [UInt8](repeating: 0, count: 4096)
         while Date() < deadline {
+            if socketFD < 0 {
+                do { socketFD = try openSocket() }
+                catch { Thread.sleep(forTimeInterval: 0.18); continue }
+            }
             let count = Darwin.recv(socketFD, &bytes, bytes.count, 0)
             if count < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) { continue }
-            guard count > 0 else { throw WorkerError.streamDisconnected }
+            if count <= 0 {
+                // ADB accepts the local connection before the Android listener is ready.
+                // No video has been sent yet, so retry the handshake within the same deadline.
+                Darwin.close(socketFD)
+                socketFD = -1
+                parser = BoundedVideoParser()
+                Thread.sleep(forTimeInterval: 0.18)
+                if Date() < deadline {
+                    do { socketFD = try openSocket() } catch { continue }
+                }
+                continue
+            }
             for packet in try parser.append(Data(bytes.prefix(count))) {
-                guard packet.kind == .control, packet.controlCode == .capabilities else { continue }
+                guard packet.kind == .control,
+                      packet.controlCode == .capabilities,
+                      packet.sessionID == sessionID else { continue }
                 return try decodeCapabilities(packet.payload)
             }
         }
@@ -100,7 +118,7 @@ final class VideoStreamSender: @unchecked Sendable {
             socketFD = -1
         }
         lock.unlock()
-        controlFinished?.wait()
+        _ = controlFinished?.wait(timeout: .now() + 2)
         controlThread = nil
         controlFinished = nil
     }

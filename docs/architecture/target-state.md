@@ -4,7 +4,9 @@
 
 `MtoGCore` owns protocol framing, session and replay rules, reconnect policy, clipboard events, codec negotiation, geometry, and bounded queues. It imports no AppKit, SwiftUI, ADB, or media framework.
 
-`MtoGMedia` depends on `MtoGCore` and owns ScreenCaptureKit, VideoToolbox, and synthetic frames. `MtoGMac` owns UI, pasteboard, processes, ADB, and feature coordination. `MtoGExternalDisplayWorker` is a small lifecycle entry point with private `CGVirtualDisplay` calls isolated to one backend file.
+`MtoGPlatform` depends on `MtoGCore` and owns bounded process execution and the scrcpy control adapter, shared by Mac and worker. It is tested through fake executables and loopback sockets.
+
+`MtoGMedia` depends on `MtoGCore` and owns VideoToolbox and synthetic frames. `MtoGMac` owns UI, pasteboard, processes, ADB, and feature coordination. `MtoGExternalDisplayWorker` is a small lifecycle entry point with private `CGVirtualDisplay` calls isolated to one backend file.
 
 Android `:core` is a Kotlin/JVM module without Android imports. Android `:app` owns sockets, services, `ClipboardManager`, MediaCodec, SurfaceView, input, and Compose.
 
@@ -22,4 +24,4 @@ Control and video use separate bounded protocol v2 frames. The receiver checks d
 
 The display path is `CGVirtualDisplayBackend -> ScreenCaptureKit -> VideoToolbox -> bounded binary transport -> MediaCodec -> SurfaceView`. There is no JPEG or software-codec fallback.
 
-Automatic clipboard sync accepts only text and URLs through a verified shell-authority backend. If no supported production authority is documented, the feature reports `BLOCKED`; it does not use IME, Accessibility, notifications, AppOps, or background `ClipboardManager` as a permission workaround.
+Automatic clipboard sync accepts only text and URLs through the pinned scrcpy 3.3.4 shell control adapter. Selected Galaxy text paths were tested; lock/background behavior and simultaneous-change reliability remain device-pending. Missing or mismatched server bytes report unsupported; it does not use IME, Accessibility, notifications, AppOps, or background `ClipboardManager` as a permission workaround.

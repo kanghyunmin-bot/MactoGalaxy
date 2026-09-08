@@ -155,11 +155,11 @@ final class ClipboardSyncController {
     private let maxCacheAgeSeconds: TimeInterval = 7 * 24 * 60 * 60
     private var lastObservedSignature: String?
 
-    init(pasteboardAdapter: PasteboardAdapter = PasteboardAdapter()) {
+    init(pasteboardAdapter: PasteboardAdapter = PasteboardAdapter(), cacheDirectoryOverride: URL? = nil) {
         self.pasteboardAdapter = pasteboardAdapter
         let baseDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.temporaryDirectory
-        let cacheDirectory = baseDirectory
+        let cacheDirectory = cacheDirectoryOverride ?? baseDirectory
             .appendingPathComponent("MtoG", isDirectory: true)
             .appendingPathComponent("ClipboardCache", isDirectory: true)
         try? fileManager.createDirectory(
@@ -368,7 +368,7 @@ final class ClipboardSyncController {
         return urls?.first
     }
 
-    private func filePayload(for fileURL: URL) -> ClipboardSyncPayload? {
+    func filePayload(for fileURL: URL) -> ClipboardSyncPayload? {
         guard isRegularReadableFile(fileURL) else {
             diagnosticHandler?("Mac 클립보드 파일을 읽을 수 없습니다")
             return nil
@@ -399,7 +399,7 @@ final class ClipboardSyncController {
             text: nil,
             fileName: fileName,
             mimeType: type?.preferredMIMEType ?? "application/octet-stream",
-            binaryData: kind == .image ? normalizedPNGData(from: fileData, fileURL: fileURL) ?? fileData : fileData,
+            binaryData: fileData,
             sizeInBytes: fileData.count
         )
     }

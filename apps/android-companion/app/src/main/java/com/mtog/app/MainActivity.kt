@@ -56,8 +56,6 @@ import com.mtog.app.pairing.PairingUiState
 import com.mtog.app.service.SessionForegroundService
 import com.mtog.app.session.SessionRuntime
 import com.mtog.app.session.SessionRuntimeState
-import com.mtog.app.transport.TransportCoordinator
-import com.mtog.app.transport.TransportMode
 import com.mtog.app.ui.theme.MtoGTheme
 
 private val Ink = Color(0xFF17202A)
@@ -150,8 +148,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun HomeScreen() {
     val context = LocalContext.current
-    val coordinator = remember { TransportCoordinator() }
-    var mode by remember { mutableStateOf(coordinator.mode) }
     val sessionState by SessionRuntime.state.collectAsState()
     val history by ClipboardHistoryStore.history.collectAsState()
     val pairingState by PairingStore.state.collectAsState()
@@ -185,6 +181,7 @@ private fun HomeScreen() {
                 item {
                     StatusOverviewCard(sessionState = sessionState)
                 }
+                item { ClipboardFeatureCard() }
                 if (wide) {
                     item {
                         Row(
@@ -198,9 +195,7 @@ private fun HomeScreen() {
                                 modifier = Modifier.weight(1f)
                             )
                             TransportCard(
-                                mode = mode,
                                 sessionState = sessionState,
-                                onRotate = { mode = coordinator.rotateMode() },
                                 onRestartServer = {
                                     ContextCompat.startForegroundService(
                                         context,
@@ -245,9 +240,7 @@ private fun HomeScreen() {
                     }
                     item {
                         TransportCard(
-                            mode = mode,
                             sessionState = sessionState,
-                            onRotate = { mode = coordinator.rotateMode() },
                             onRestartServer = {
                                 ContextCompat.startForegroundService(
                                     context,
@@ -292,12 +285,12 @@ private fun NativeInputCard(modifier: Modifier = Modifier) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionTitle(title = "입력 조작", detail = "키보드와 포인터 방식")
             Text(
-                text = "일반 조작은 가능한 한 갤럭시 기본 입력 방식을 우선 사용합니다.",
+                text = "태블릿을 Mac의 터치 가능한 확장 디스플레이로 사용합니다.",
                 color = Success,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                text = "USB HID 또는 미러링 창 안 조작을 사용하세요. 미러링 창 밖으로 마우스를 빼면 바로 Mac 조작으로 돌아갑니다.",
+                text = "Mac에서 확장 화면을 시작한 다음 이 태블릿을 터치해 Mac 앱을 조작하세요.",
                 color = Muted
             )
         }
@@ -428,7 +421,7 @@ private fun HeaderCard() {
                 fontWeight = FontWeight.Black
             )
             Text(
-                text = "Mac과 갤럭시 탭을 개인 Wi-Fi 또는 USB로 연결합니다. 클립보드와 미러링을 버튼으로 쉽게 제어하세요.",
+                text = "Mac과 Galaxy, 하나의 작업 공간. USB로 연결하고 Mac에서 사용할 기능을 켜세요.",
                 color = Color.White.copy(alpha = 0.84f),
                 fontWeight = FontWeight.SemiBold
             )
@@ -503,9 +496,7 @@ private fun DigitBox(digit: String) {
 
 @Composable
 private fun TransportCard(
-    mode: TransportMode,
     sessionState: SessionRuntimeState,
-    onRotate: () -> Unit,
     onRestartServer: () -> Unit,
     onSyncClipboard: () -> Unit,
     modifier: Modifier = Modifier
@@ -516,28 +507,11 @@ private fun TransportCard(
         colors = CardDefaults.cardColors(containerColor = Panel)
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionTitle(title = "연결 방식", detail = "USB, 개인 Wi-Fi, 클립보드")
-            Text(
-                text = mode.label,
-                color = Ink,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Black
-            )
-            Text(
-                text = mode.detail,
-                color = Muted
-            )
-            InfoLine(label = "수신 서버", value = sessionState.serviceState, strong = true)
-            InfoLine(label = "연결된 Mac", value = sessionState.peerDeviceName)
-            InfoLine(label = "Wi-Fi 주소", value = sessionState.lanEndpoint, strong = true)
-            InfoLine(label = "무선 검색", value = sessionState.discoveryState, strong = true)
-            InfoLine(label = "통신", value = "수신 ${sessionState.lastInboundType} · 송신 ${sessionState.lastOutboundType}")
-            InfoLine(label = "조작", value = sessionState.lastControlEvent)
-            InfoLine(label = "클립보드", value = sessionState.lastClipboardEvent)
-            Text(
-                text = "무선 연결은 개인 Wi-Fi, 개인 핫스팟, 신뢰할 수 있는 LAN에서 사용하세요. 갤럭시에서 Mac으로 클립보드를 보내려면 복사 후 알림의 '클립보드 동기화'를 누르세요.",
-                color = Muted
-            )
+            SectionTitle(title = "연결 및 수동 전송", detail = "실제 수신 상태")
+            Text(sessionState.serviceState, color = Ink,
+                style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(sessionState.peerDeviceName, color = Muted)
+            Text(sessionState.lastClipboardEvent, color = Muted)
             sessionState.lastError?.let { error ->
                 Text(
                     text = error,
@@ -545,16 +519,24 @@ private fun TransportCard(
                     fontWeight = FontWeight.SemiBold
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onRestartServer) {
-                    Text("연결 대기 시작")
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onRestartServer, modifier = Modifier.fillMaxWidth()) {
+                    Text("연결 대기 시작 / 다시 연결")
                 }
-                Button(onClick = onSyncClipboard) {
-                    Text("지금 동기화")
+                Button(onClick = onSyncClipboard, modifier = Modifier.fillMaxWidth()) {
+                    Text("현재 클립보드를 Mac으로 보내기")
                 }
-                Button(onClick = onRotate) {
-                    Text("데모 모드 전환")
-                }
+            }
+            var showDiagnostics by remember { mutableStateOf(false) }
+            androidx.compose.material3.TextButton(onClick = { showDiagnostics = !showDiagnostics }) {
+                Text(if (showDiagnostics) "연결 진단 접기" else "연결 진단 보기")
+            }
+            if (showDiagnostics) {
+                InfoLine(label = "Wi-Fi 주소", value = sessionState.lanEndpoint)
+                InfoLine(label = "검색", value = sessionState.discoveryState)
+                InfoLine(label = "최근 수신", value = sessionState.lastInboundType)
+                InfoLine(label = "최근 송신", value = sessionState.lastOutboundType)
+                Text("Wi-Fi 수동 전송은 같은 개인 네트워크에서 사용하세요. 자동 텍스트와 확장 화면은 USB로 연결하세요.", color = Muted)
             }
         }
     }
@@ -575,8 +557,9 @@ private fun InfoLine(label: String, value: String, strong: Boolean = false) {
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Black
         )
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
+            modifier = Modifier.weight(1f),
             text = value,
             color = if (strong) Ink else Muted,
             style = MaterialTheme.typography.bodyMedium,

@@ -57,9 +57,11 @@ struct VideoToolboxRoundTripTests {
     func hevcCapabilityIsExplicit() throws {
         switch VideoToolboxCodecSupport.hardwareStatus(for: .hevc, width: 64, height: 48) {
         case .available:
+            print("HEVC 64x48 hardware round-trip: EXECUTED")
             let result = try runRoundTrip(codec: .hevc, frameCount: 2)
             #expect(result.decodedFrames == 2)
         case .unavailable(let reason):
+            print("HEVC 64x48 hardware round-trip: CAPABILITY_UNAVAILABLE \(reason)")
             #expect(!reason.isEmpty)
         }
     }
@@ -117,5 +119,27 @@ private extension Data {
         stride(from: 0, to: count, by: size).map { offset in
             Data(self[offset..<Swift.min(offset + size, count)])
         }
+    }
+}
+
+struct EncodedRecoveryRegressionTests {
+    @Test func deltaEvictionRequiresNewKeyframe() {
+        func frame(_ time: UInt64, key: Bool = false, config: Data? = nil) -> RealtimeEncodedFrame {
+            .init(config: config, accessUnit: .init(annexBData: Data([1]), presentationTimeUs: time, isKeyframe: key))
+        }
+        var buffer = LatestEncodedFrameBuffer()
+        buffer.offer(frame(1, key: true, config: Data([7])))
+        _ = buffer.take()
+        buffer.offer(frame(2))
+        buffer.offer(frame(3)) // omitted reference frame
+        #expect(buffer.needsKeyframe)
+        #expect(buffer.take()?.accessUnit.presentationTimeUs == 2)
+        buffer.offer(frame(4))
+        #expect(buffer.take() == nil)
+        buffer.offer(frame(5, key: true))
+        #expect(!buffer.needsKeyframe)
+        #expect(buffer.take()?.accessUnit.presentationTimeUs == 5)
+        buffer.offer(frame(6))
+        #expect(buffer.take()?.accessUnit.presentationTimeUs == 6)
     }
 }

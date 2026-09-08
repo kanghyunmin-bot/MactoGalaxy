@@ -1,27 +1,13 @@
-# Current state
+# Architecture
 
-## Baseline on 2026-09-01
+- **MtoGCore / Android core:** bounded protocol v2 framing, replay/session state, clipboard payloads, display geometry and gestures; shared fixtures.
+- **MtoGPlatform:** bounded subprocesses and pinned scrcpy 3.3.4 control-only clipboard transport.
+- **MtoGMac:** AppKit window hosting SwiftUI, asynchronous keychain identity startup, trusted connection coordination, pasteboard sharing and Mac touch event synthesis.
+- **MtoGExternalDisplayWorker:** isolated private CGVirtualDisplay backend, ScreenCaptureKit capture, VideoToolbox encoder, bounded video transport and touch receiver.
+- **Android companion:** foreground connection service, sharing entry point and immersive MediaCodec Surface display. A new control session recreates its Surface callbacks.
 
-The baseline ran on branch `main` before creating `khm/mtog-harness-refactor`. The tracked worktree was clean. Ignored local paths included Swift and Android build output, signing environment files, `dist/`, and `secrets/`.
+The video path is ScreenCaptureKit → HEVC/H.264 → USB → MediaCodec. It has no JPEG fallback. Input uses shared coordinate mapping. Automatic text uses a separate scrcpy control-only session; images/files use manual protocol-v2 transfer.
 
-| Check | Result |
-|---|---|
-| Swift | `6.3.3`, debug build passed |
-| Java default lookup | Failed because macOS had no registered runtime |
-| Existing JDK | Homebrew OpenJDK `17.0.19` found and used through `JAVA_HOME` |
-| Gradle | `8.10.2`; `:app:assembleDebug` passed |
-| ADB | `37.0.0`; no attached devices |
-| scrcpy | `3.3.4`; help exposes clipboard autosync but no standalone clipboard authority |
-| Emulator | Command unavailable; no emulator gate registered |
+Identity, trusted-peer and clipboard-history formats are preserved. Galaxy mirroring, edge activation, AOA/HID and custom IME/accessibility control are removed. Session validation is not transport encryption.
 
-## Baseline legacy implementation
-
-At baseline, the Mac and Android control channel used newline-delimited JSON. Android called `BufferedReader.readLine()` before checking its size. The Mac retried at most eight times with linear delay.
-
-Slice 2 replaced that path on both platforms with the bounded binary-header control parser, canonical JSON payloads, connection-bound replay state, and exponential retry delays.
-
-At baseline, the external-display worker combined private virtual-display calls, image capture, JPEG encoding, sockets, and input in one file. Slice 5 split the worker and replaced Mac capture/send with ScreenCaptureKit, hardware VideoToolbox, and MTGV packets. Slice 6 replaced Android Bitmap decoding with an off-main-thread MTGV parser, MediaCodec, and SurfaceView. Hardware display behavior remains `DEVICE_TEST_PENDING`.
-
-`AppModel` and Android `SessionRuntime` combine connection, pairing, clipboard, input, mirror, display, and discovery state. Some ADB and scrcpy commands do not select a serial. Automatic clipboard production authority is blocked rather than using an Android listener or permission workaround.
-
-Serial-selection and combined-state paths remain until their owning slices replace them. Automatic clipboard has tested pure and fake paths, but production shell authority is `BLOCKED`; manual clipboard and history remain available. `docs/refactor-progress.md` lists them as open debt.
+[Device qualification](../device-runs/2026-09-08/README.md) is separate from [no-device verification](../verification-matrix.md).

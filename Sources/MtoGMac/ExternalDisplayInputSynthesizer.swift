@@ -1,3 +1,4 @@
+import MtoGCore
 import AppKit
 import ApplicationServices
 import CoreGraphics
@@ -7,6 +8,13 @@ final class ExternalDisplayInputSynthesizer {
     var permissionFailureHandler: (() -> Void)?
 
     private var didReportMissingAccessibility = false
+    private var pressed = PressedMouseButtons()
+    private var lastPoint = CGPoint.zero
+
+    func releaseAll() {
+        for event in pressed.releaseAll() { postMouse(eventName: event, point: lastPoint, clickState: 1) }
+    }
+
 
     func handleInputPayload(_ payload: String) {
         guard let data = payload.data(using: .utf8),
@@ -22,7 +30,7 @@ final class ExternalDisplayInputSynthesizer {
         case "mouse":
             guard let eventName = object["event"] as? String,
                   let point = point(from: object) else { return }
-            postMouse(eventName: eventName, point: point)
+            postMouse(eventName: eventName, point: point, clickState: int32(object["clickState"]))
         case "scroll":
             let wheelX = int32(object["wheelX"])
             let wheelY = int32(object["wheelY"])
@@ -41,11 +49,12 @@ final class ExternalDisplayInputSynthesizer {
     }
 
     private func moveCursor(to point: CGPoint) {
+        guard accessibilityIsTrusted() else { return }
         CGWarpMouseCursorPosition(point)
         CGAssociateMouseAndMouseCursorPosition(boolean_t(1))
     }
 
-    private func postMouse(eventName: String, point: CGPoint) {
+    private func postMouse(eventName: String, point: CGPoint, clickState: Int32) {
         guard accessibilityIsTrusted() else { return }
 
         let mapping = mouseMapping(for: eventName)
@@ -57,6 +66,11 @@ final class ExternalDisplayInputSynthesizer {
         ) else {
             return
         }
+        if (1 ... 2).contains(clickState) {
+            event.setIntegerValueField(.mouseEventClickState, value: Int64(clickState))
+        }
+        pressed.record(eventName)
+        lastPoint = point
         event.post(tap: .cghidEventTap)
     }
 

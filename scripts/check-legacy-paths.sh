@@ -17,11 +17,6 @@ if grep -E 'SessionCodec|encodeLine|decodeLine|firstIndex\(of: 0x0A\)' \
     exit 1
 fi
 
-if grep -R -- '--no-clipboard-autosync' Sources apps/android-companion/app/src/main >/dev/null; then
-    echo "scrcpy clipboard autosync is disabled" >&2
-    exit 1
-fi
-
 if grep -E 'OnPrimaryClipChangedListener|addPrimaryClipChangedListener' \
     apps/android-companion/app/src/main/java/com/mtog/app/clipboard/ClipboardSyncManager.kt >/dev/null; then
     echo "Android background clipboard listener found" >&2
@@ -30,7 +25,11 @@ fi
 
 grep -q 'implementation(project(":core"))' apps/android-companion/app/build.gradle.kts
 grep -q 'dependencies: \["MtoGCore"\]' Package.swift
-grep -q 'ClipboardAuthorityStatus = .blocked' Sources/MtoGMac/ShellClipboardTransport.swift
+# Production protocol/lifecycle behavior is exercised by ScrcpyAdapterTests in swift test.
+if grep -R -E '^import (AppKit|SwiftUI|Network|Darwin)$|Process\(' Sources/MtoGCore >/dev/null; then
+    echo "platform dependency escaped into pure Core" >&2
+    exit 1
+fi
 
 if grep -E 'JSON|Base64' Sources/MtoGCore/Video*.swift \
     apps/android-companion/core/src/main/kotlin/com/mtog/core/Video*.kt >/dev/null; then
@@ -67,4 +66,25 @@ fi
 grep -q 'SurfaceView' apps/android-companion/app/src/main/java/com/mtog/app/externaldisplay/ExternalDisplaySurface.kt
 grep -q 'MediaCodec' apps/android-companion/app/src/main/java/com/mtog/app/externaldisplay/MediaCodecVideoDecoder.kt
 
+if grep -R -E 'arguments: \["(forward|reverse|shell|get-state)|process\.arguments = \[\]' \
+    Sources/MtoGMac Sources/MtoGExternalDisplayWorker >/dev/null; then
+    echo "device-targeted command without explicit serial found" >&2
+    exit 1
+fi
+grep -q 'process.arguments = \["--serial", serial, "--session", sessionID.uuidString\]' \
+    Sources/MtoGMac/VirtualDisplayBridge.swift
+grep -q 'object\["sessionId"\]' Sources/MtoGExternalDisplayWorker/TouchInputServer.swift
+grep -q 'UUID(uuidString: sessionValue) == controlSessionID' Sources/MtoGExternalDisplayWorker/TouchInputServer.swift
+grep -q 'sequence > touchInputState.highestSequence' Sources/MtoGExternalDisplayWorker/TouchInputServer.swift
+grep -q 'override fun onNewIntent' apps/android-companion/app/src/main/java/com/mtog/app/ExternalDisplayActivity.kt
+grep -q 'sessionID = controlSessionID' apps/android-companion/app/src/main/java/com/mtog/app/externaldisplay/VideoStreamReceiver.kt
+
+if [ -e Sources/MtoGMac/ScrcpyMirrorBridge.swift ] || [ -e Sources/MtoGMac/AoaHidBridge.swift ]; then
+    echo "removed reverse-control feature returned" >&2
+    exit 1
+fi
+if grep -E 'RemoteKeyboardService|AccessibilityControlService' apps/android-companion/app/src/main/AndroidManifest.xml >/dev/null; then
+    echo "removed Android input service returned" >&2
+    exit 1
+fi
 echo "registered legacy path checks: PASS"

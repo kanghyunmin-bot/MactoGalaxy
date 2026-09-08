@@ -111,6 +111,18 @@ final class SessionClient: ObservableObject {
         connectionGeneration
     }
 
+    var selectedDeviceSerial: String? {
+        bridge.selectedDeviceSerial
+    }
+
+    var activeProtocolSessionID: UUID? {
+        state == .connected ? UUID(uuidString: currentSessionId) : nil
+    }
+
+    var hasActiveADBSession: Bool {
+        state == .connected && activeRoute == .adb
+    }
+
     func connectOverADB() async {
         await connectOverADBInternal(isReconnectAttempt: false)
     }
@@ -335,7 +347,8 @@ final class SessionClient: ObservableObject {
         await send(makeEnvelope(type: .ping, payload: ["kind": "adb-mvp"]))
     }
 
-    func sendHello() async {
+    func sendHello(expectedGeneration: UInt64? = nil) async {
+        if let expectedGeneration, expectedGeneration != connectionGeneration { return }
         await send(
             makeEnvelope(
                 type: .hello,
@@ -391,156 +404,10 @@ final class SessionClient: ObservableObject {
         )
     }
 
-    func sendEnterControlMode(edge: String) async {
-        await send(
-            makeEnvelope(
-                type: .enterControlMode,
-                payload: ["edge": edge]
-            )
-        )
-    }
-
-    func sendExitControlMode(reason: String) async {
-        await send(
-            makeEnvelope(
-                type: .exitControlMode,
-                payload: ["reason": reason]
-            )
-        )
-    }
-
-    func sendRemoteTap(normalizedX: Double, normalizedY: Double) async {
-        await send(
-            makeEnvelope(
-                type: .remoteTap,
-                payload: [
-                    "normalizedX": String(format: "%.4f", normalizedX),
-                    "normalizedY": String(format: "%.4f", normalizedY)
-                ]
-            )
-        )
-    }
-
-    func sendRemoteGesture(
-        kind: String,
-        startX: Double,
-        startY: Double,
-        endX: Double,
-        endY: Double,
-        durationMs: Int
-    ) async {
-        await send(
-            makeEnvelope(
-                type: .remoteGesture,
-                payload: [
-                    "kind": kind,
-                    "startX": String(format: "%.4f", startX),
-                    "startY": String(format: "%.4f", startY),
-                    "endX": String(format: "%.4f", endX),
-                    "endY": String(format: "%.4f", endY),
-                    "durationMs": String(durationMs)
-                ]
-            )
-        )
-    }
-
-    func sendRemotePinch(
-        centerX: Double,
-        centerY: Double,
-        magnification: Double
-    ) async {
-        await send(
-            makeEnvelope(
-                type: .remotePinch,
-                payload: [
-                    "centerX": String(format: "%.4f", centerX),
-                    "centerY": String(format: "%.4f", centerY),
-                    "magnification": String(format: "%.4f", magnification)
-                ]
-            )
-        )
-    }
-
-    func sendRemoteTouchStart(normalizedX: Double, normalizedY: Double) async {
-        await send(
-            makeEnvelope(
-                type: .remoteTouchStart,
-                payload: [
-                    "normalizedX": String(format: "%.4f", normalizedX),
-                    "normalizedY": String(format: "%.4f", normalizedY)
-                ]
-            )
-        )
-    }
-
-    func sendRemoteTouchMove(normalizedX: Double, normalizedY: Double) async {
-        await send(
-            makeEnvelope(
-                type: .remoteTouchMove,
-                payload: [
-                    "normalizedX": String(format: "%.4f", normalizedX),
-                    "normalizedY": String(format: "%.4f", normalizedY)
-                ]
-            )
-        )
-    }
-
-    func sendRemoteTouchEnd(normalizedX: Double, normalizedY: Double) async {
-        await send(
-            makeEnvelope(
-                type: .remoteTouchEnd,
-                payload: [
-                    "normalizedX": String(format: "%.4f", normalizedX),
-                    "normalizedY": String(format: "%.4f", normalizedY)
-                ]
-            )
-        )
-    }
-
-    func sendRemoteBack() async {
-        await send(makeEnvelope(type: .remoteBack))
-    }
-
-    func sendRemoteHome() async {
-        await send(makeEnvelope(type: .remoteHome))
-    }
-
-    func sendRemotePointerUpdate(
-        normalizedX: Double,
-        normalizedY: Double,
-        primaryButtonDown: Bool
-    ) async {
-        await send(
-            makeEnvelope(
-                type: .remotePointerUpdate,
-                payload: [
-                    "normalizedX": String(format: "%.4f", normalizedX),
-                    "normalizedY": String(format: "%.4f", normalizedY),
-                    "primaryButtonDown": primaryButtonDown ? "true" : "false"
-                ]
-            )
-        )
-    }
-
-    func sendRemoteText(_ text: String) async {
-        await send(
-            makeEnvelope(
-                type: .remoteText,
-                payload: ["text": text]
-            )
-        )
-    }
-
-    func sendRemoteDeleteBackward() async {
-        await send(makeEnvelope(type: .remoteDeleteBackward))
-    }
-
-    func sendRemoteEnterKey() async {
-        await send(makeEnvelope(type: .remoteEnterKey))
-    }
-
     private func send(_ message: SessionEnvelope, allowsHandshake: Bool = false) async {
         guard let connection else { return }
+        let generation = connectionGeneration
+        guard message.sessionId == currentSessionId else { return }
         guard allowsHandshake || (state == .connected && handshakePhase == .complete) else { return }
 
         do {
@@ -555,6 +422,7 @@ final class SessionClient: ObservableObject {
                 })
             }
         } catch {
+            guard generation == connectionGeneration, self.connection === connection else { return }
             let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             markFailed(message)
         }
@@ -593,7 +461,7 @@ final class SessionClient: ObservableObject {
             healthText = "\(activeRoute.description) protocol v2 확인 중"
             startHandshakeTimeout(generation: generation)
             Task {
-                await sendHello()
+                await sendHello(expectedGeneration: generation)
             }
         case .failed(let error):
             markFailed(error.localizedDescription)
@@ -733,9 +601,8 @@ final class SessionClient: ObservableObject {
                 healthText = "\(activeRoute.description)로 연결됨"
                 startHeartbeat()
             } else if message.type == .ping {
-                Task {
-                    await self.send(self.makeEnvelope(type: .pong, payload: ["replyTo": message.id.uuidString]))
-                }
+                let pong = makeEnvelope(type: .pong, payload: ["replyTo": message.id.uuidString])
+                Task { await self.send(pong) }
             } else if message.type == .pong {
                 healthText = "상태 확인 정상 \(Self.timeLabel(Date()))"
             } else if message.type == .error {
@@ -783,24 +650,24 @@ final class SessionClient: ObservableObject {
 
     private func startHeartbeat() {
         heartbeatTask?.cancel()
+        let generation = connectionGeneration
         heartbeatTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 6_000_000_000)
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
-                    guard let self, self.state == .connected else { return }
+                    guard let self,
+                          self.state == .connected,
+                          self.connectionGeneration == generation else { return }
                     self.healthText = "상태 확인 보냄 \(Self.timeLabel(Date()))"
-                    Task {
-                        await self.send(
-                            self.makeEnvelope(
-                                type: .ping,
-                                payload: [
-                                    "kind": "heartbeat",
-                                    "sentAtUnixMs": String(Int64(Date().timeIntervalSince1970 * 1000))
-                                ]
-                            )
-                        )
-                    }
+                    let ping = self.makeEnvelope(
+                        type: .ping,
+                        payload: [
+                            "kind": "heartbeat",
+                            "sentAtUnixMs": String(Int64(Date().timeIntervalSince1970 * 1000))
+                        ]
+                    )
+                    Task { await self.send(ping) }
                 }
             }
         }

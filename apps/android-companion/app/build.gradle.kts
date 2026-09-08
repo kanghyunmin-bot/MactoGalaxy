@@ -23,8 +23,9 @@ android {
         applicationId = "com.mtog.app"
         minSdk = 31
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.1.3"
+        versionCode = 6
+        versionName = "0.2.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -92,6 +93,7 @@ dependencies {
 
     testImplementation(kotlin("test"))
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
 
     debugImplementation(composeBom)
     debugImplementation("androidx.compose.ui:ui-tooling")

@@ -1,5 +1,8 @@
 public enum ClipboardAuthorityStatus: Equatable, Sendable {
     case available
+    case negotiating
+    case permissionRequired(String)
+    case unsupported(String)
     case blocked(String)
     case stopped
     case failed(String)
@@ -27,6 +30,7 @@ public final class AutomaticClipboardCoordinator {
     private let transport: ClipboardEventTransport
     private let engine: ClipboardSyncEngine
     private var applyingRemote = false
+    private var activeSessionID: String?
 
     public init(store: ClipboardTextStore, transport: ClipboardEventTransport, sourceID: String, sessionID: String) {
         self.store = store
@@ -36,9 +40,15 @@ public final class AutomaticClipboardCoordinator {
 
     @discardableResult
     public func start(sessionID: String) -> ClipboardAuthorityStatus {
-        engine.begin(sessionID: sessionID)
+        if activeSessionID != sessionID {
+            engine.begin(sessionID: sessionID)
+            activeSessionID = sessionID
+        }
         status = transport.status
-        guard status == .available else { return status }
+        switch status {
+        case .available, .negotiating, .permissionRequired: break
+        default: return status
+        }
 
         store.changeHandler = { [weak self] kind, content in
             guard let self, !self.applyingRemote else { return }
@@ -61,6 +71,7 @@ public final class AutomaticClipboardCoordinator {
     }
 
     public func stop() {
+        activeSessionID = nil
         store.changeHandler = nil
         transport.receiveHandler = nil
         transport.stop()

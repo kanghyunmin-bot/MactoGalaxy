@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import MtoGCore
 
 struct DashboardView: View {
     @ObservedObject var model: AppModel
@@ -8,25 +9,27 @@ struct DashboardView: View {
         ZStack {
             DashboardBackground()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    HeaderView(model: model)
-                    ConnectionPanel(model: model)
-
-                    HStack(alignment: .top, spacing: 18) {
-                        MirrorPanel(model: model)
-                        ClipboardPanel(model: model)
-                    }
-
-                    HStack(alignment: .top, spacing: 18) {
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        HeaderView(model: model)
+                        ConnectionPanel(model: model)
                         ExternalDisplayPanel(model: model)
+                        AutomaticClipboardPanel(model: model)
+                        ClipboardPanel(model: model)
                         DetailsPanel(model: model)
                     }
+                    .frame(maxWidth: 1320)
+                    .padding(24)
+                    .frame(maxWidth: .infinity)
                 }
-                .padding(28)
             }
         }
         .preferredColorScheme(.light)
+        .onAppear { model.refreshDisplayPermissions() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            model.refreshDisplayPermissions()
+        }
     }
 }
 
@@ -59,77 +62,92 @@ private struct HeaderView: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        HStack(alignment: .center, spacing: 20) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("MtoG")
-                    .font(.system(size: 48, weight: .black, design: .rounded))
+        HStack(alignment: .center, spacing: 24) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("MtoG").font(.system(size: 38, weight: .black, design: .rounded))
                     .foregroundStyle(AppTheme.ink)
-                Text("갤럭시 탭을 Wi-Fi 또는 USB로 연결하고, 미러링과 클립보드를 함께 사용합니다.")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                Text("Mac과 Galaxy, 하나의 작업 공간")
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(AppTheme.muted)
             }
-
             Spacer()
-
-            VStack(alignment: .trailing, spacing: 10) {
-                StatusCapsule(
-                    title: model.connectionStatus.rawValue,
-                    detail: model.sessionClient.activeTransportDescription,
-                    systemImage: "point.3.connected.trianglepath.dotted",
-                    tint: model.connectionStatus == .trusted || model.connectionStatus == .active ? AppTheme.success : AppTheme.accent
-                )
-                StatusCapsule(
-                    title: model.isMirrorRunning ? "미러링 실행 중" : "미러링 대기 중",
-                    detail: model.mirrorStatusText,
-                    systemImage: "rectangle.connected.to.line.below",
-                    tint: model.isMirrorRunning ? AppTheme.success : AppTheme.accentWarm
-                )
-            }
+            StatusCapsule(title: model.adbStateText,
+                detail: model.trustState.isTrusted ? "저장된 기기 · 연결 후 기능 사용" : "USB 연결 후 페어링하세요",
+                systemImage: "cable.connector", tint: model.canUseUSBFeatures ? AppTheme.success : AppTheme.accent)
         }
-        .surfaceCard(padding: 24)
+        .padding(.vertical, 8)
     }
 }
 
-private struct MirrorPanel: View {
+private struct AutomaticClipboardPanel: View {
     @ObservedObject var model: AppModel
+
+    private var stateLabel: String {
+        guard model.automaticClipboardEnabled else { return "꺼짐" }
+        guard model.canUseUSBFeatures else { return "연결 대기" }
+        switch model.clipboardAuthority {
+        case .available: return "사용 중"
+        case .negotiating: return "준비 중"
+        case .failed: return "오류"
+        case .unsupported: return "지원 확인 필요"
+        case .permissionRequired, .blocked: return "확인 필요"
+        case .stopped: return "대기 중"
+        }
+    }
+
+    private var tint: Color {
+        switch model.clipboardAuthority {
+        case .available: return AppTheme.success
+        case .failed: return AppTheme.danger
+        case .permissionRequired, .unsupported, .blocked: return AppTheme.accentWarm
+        default: return AppTheme.accent
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SectionTitle("갤럭시 미러링", subtitle: "창 안에서만 조작", systemImage: "display")
-
-            HStack(alignment: .center, spacing: 18) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(model.isMirrorRunning ? "갤럭시 화면이 열려 있습니다" : "갤럭시 화면을 Mac에 띄우기")
-                        .font(.system(size: 28, weight: .black, design: .rounded))
-                        .foregroundStyle(AppTheme.ink)
-                    Text(model.mirrorStatusText)
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppTheme.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("마우스가 미러링 창 안에 있을 때만 갤럭시를 조작합니다. 창 밖으로 나오면 바로 Mac 조작으로 돌아옵니다.")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(AppTheme.muted)
-                }
-
+            HStack(alignment: .top) {
+                SectionTitle("자동 텍스트 클립보드", subtitle: "Mac ↔ Galaxy · USB", systemImage: "doc.on.clipboard")
                 Spacer()
-
-                VStack(spacing: 10) {
-                    Button(model.isMirrorRunning ? "미러링 종료" : "USB 미러링 시작") {
-                        if model.isMirrorRunning {
-                            model.stopMirrorMode()
-                        } else {
-                            model.startMirrorMode()
-                        }
-                    }
-                    .buttonStyle(PrimaryActionButtonStyle(tint: model.isMirrorRunning ? AppTheme.accentWarm : AppTheme.accent))
-
-                    Button("USB 세션 다시 연결") {
-                        Task { await model.connectADBSession() }
-                    }
-                    .buttonStyle(SecondaryActionButtonStyle())
-                }
-                .frame(width: 190)
+                Text(stateLabel)
+                    .font(.system(size: 12, weight: .bold))
+                    .padding(.horizontal, 12).padding(.vertical, 7)
+                    .background(tint.opacity(0.12), in: Capsule())
+                    .foregroundStyle(tint)
             }
+            Text("복사한 텍스트와 링크를 두 기기에서 이어 쓰세요.")
+                .font(.system(size: 24, weight: .bold)).foregroundStyle(AppTheme.ink)
+            Label(model.automaticClipboardStatus, systemImage: "arrow.triangle.2.circlepath")
+                .font(.system(size: 14, weight: .medium)).foregroundStyle(tint)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 12) {
+                Button(model.automaticClipboardEnabled ? "자동 동기화 중지" : "자동 동기화 켜기") {
+                    model.toggleAutomaticClipboard()
+                }
+                .buttonStyle(PrimaryActionButtonStyle(tint: tint))
+                .disabled(!model.automaticClipboardEnabled && !model.canUseUSBFeatures)
+                if model.canRetryClipboard {
+                    Button("다시 시도") { model.retryAutomaticClipboard() }
+                        .buttonStyle(SecondaryActionButtonStyle())
+                }
+                if !model.canUseUSBFeatures {
+                    Text("신뢰된 USB 연결이 필요합니다")
+                        .font(.system(size: 12)).foregroundStyle(AppTheme.muted)
+                }
+            }
+            Divider()
+            HStack(spacing: 22) {
+                Label("Samsung Keyboard 유지", systemImage: "keyboard")
+                Label("USB로 공유", systemImage: "cable.connector")
+                Label("붙여넣기는 직접", systemImage: "hand.tap")
+            }
+            .font(.system(size: 12, weight: .medium)).foregroundStyle(AppTheme.muted)
+            DisclosureGroup("동기화가 멈췄을 때") {
+                Text("갤럭시 잠금을 해제하고 텍스트를 복사해 보세요. 연결이 끊겼다면 USB를 다시 연결하세요. 오류가 계속되면 다시 시도를 누르세요. 이미지와 파일은 아래 수동 전송을 사용합니다.")
+                    .font(.system(size: 13)).foregroundStyle(AppTheme.muted)
+                    .padding(.top, 8).fixedSize(horizontal: false, vertical: true)
+            }
+            .font(.system(size: 13, weight: .medium))
         }
         .surfaceCard(padding: 24)
     }
@@ -137,61 +155,44 @@ private struct MirrorPanel: View {
 
 private struct ExternalDisplayPanel: View {
     @ObservedObject var model: AppModel
-
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SectionTitle("외장 디스플레이", subtitle: "실험적 보조 화면", systemImage: "rectangle.inset.filled.and.person.filled")
-
-            HStack(alignment: .center, spacing: 18) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("갤럭시 탭을 Mac의 별도 화면처럼 써야 할 때만 사용하세요.")
-                        .font(.system(size: 22, weight: .black, design: .rounded))
-                        .foregroundStyle(AppTheme.ink)
-
-                    Text("실험 기능입니다. macOS 가상 디스플레이와 ADB 스트리밍을 사용하므로 화면 오류, 잔여 디스플레이 상태, 성능 저하가 생길 수 있습니다. 안정적인 사용은 미러링을 권장합니다.")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppTheme.danger)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(model.externalDisplayStatusText)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppTheme.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Toggle("실험적 외장 디스플레이 허용", isOn: $model.allowExperimentalExternalDisplay)
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppTheme.ink)
-                }
-
-                Spacer()
-
-                VStack(spacing: 10) {
-                    StatusCapsule(
-                        title: model.isExternalDisplayRunning ? "디스플레이 실행 중" : "디스플레이 대기 중",
-                        detail: model.allowExperimentalExternalDisplay ? "실험 기능 허용됨" : "먼저 허용 스위치를 켜세요",
-                        systemImage: "display.2",
-                        tint: model.isExternalDisplayRunning ? AppTheme.success : AppTheme.accentWarm
-                    )
-                    .frame(width: 260)
-
-                    Button(model.isExternalDisplayRunning ? "외장 디스플레이 종료" : "외장 디스플레이 시작") {
-                        if model.isExternalDisplayRunning {
-                            model.stopExternalDisplayMode()
-                        } else {
-                            model.startExternalDisplayMode()
-                        }
-                    }
-                    .buttonStyle(PrimaryActionButtonStyle(tint: model.isExternalDisplayRunning ? AppTheme.accentWarm : AppTheme.success))
-                    .disabled(!model.allowExperimentalExternalDisplay)
-
-                    Button("강제 종료") {
-                        model.stopExternalDisplayMode()
-                    }
-                    .buttonStyle(SecondaryActionButtonStyle())
-                }
-                .frame(width: 270)
+            SectionTitle("Mac 작업 공간 넓히기", subtitle: "Mac 확장 디스플레이 · 터치 입력", systemImage: "display.2")
+            Label("Mac  →  Galaxy 보조 화면", systemImage: "rectangle.expand.vertical")
+                .font(.system(size: 20, weight: .bold)).foregroundStyle(AppTheme.ink)
+                .frame(maxWidth: .infinity, minHeight: 90)
+                .background(AppTheme.success.opacity(0.07), in: RoundedRectangle(cornerRadius: 16))
+            Text(model.externalDisplayStatusText)
+                .font(.system(size: 14, weight: .medium)).foregroundStyle(AppTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Mac의 창을 갤럭시로 옮겨 별도 작업 공간으로 사용합니다. 실제 화면 수신 상태는 갤럭시에서 확인하세요.")
+                .font(.system(size: 13)).foregroundStyle(AppTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            Toggle("고화질 2560 × 1600 · 60Hz 목표", isOn: $model.highQualityDisplay)
+                .disabled(model.isExternalDisplayRunning)
+                .font(.system(size: 13))
+            Button(model.isExternalDisplayRunning ? "확장 화면 종료" : "확장 화면 시작") {
+                if model.isExternalDisplayRunning { model.stopExternalDisplayMode() }
+                else { model.startExternalDisplayMode() }
             }
+            .buttonStyle(PrimaryActionButtonStyle(tint: model.isExternalDisplayRunning ? AppTheme.accentWarm : AppTheme.success))
+            .disabled(!model.isExternalDisplayRunning && !model.canUseUSBFeatures)
+            HStack {
+                Label(model.screenRecordingAllowed ? "화면 기록 허용됨" : "화면 기록 허용 필요",
+                      systemImage: model.screenRecordingAllowed ? "checkmark.circle" : "exclamationmark.circle")
+                Label(model.touchInputAllowed ? "터치 입력 허용됨" : "터치 입력 허용 필요",
+                      systemImage: model.touchInputAllowed ? "checkmark.circle" : "exclamationmark.circle")
+            }.font(.system(size: 13))
+            HStack {
+                Button("화면 기록 설정") { model.openScreenRecordingSettings() }
+                Button("터치 권한 설정") { model.openTouchPermissionSettings() }
+            }
+            .buttonStyle(SecondaryActionButtonStyle())
+            Text("화면 기록: 화면 전송에 필요 · 손쉬운 사용: 터치 조작 시 필요")
+                .font(.system(size: 12)).foregroundStyle(AppTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .surfaceCard(padding: 24)
     }
 }
@@ -201,7 +202,7 @@ private struct ConnectionPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SectionTitle("연결 허브", subtitle: "페어링, USB, 개인 Wi-Fi", systemImage: "lock.shield")
+            SectionTitle("1. 기기 연결", subtitle: "USB 연결 → 갤럭시 코드 입력 → 페어링 저장", systemImage: "lock.shield")
 
             HStack(alignment: .top, spacing: 12) {
                 VStack(spacing: 10) {
@@ -243,7 +244,8 @@ private struct ConnectionPanel: View {
                 .background(AppTheme.panelStrong, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
 
-            VStack(alignment: .leading, spacing: 10) {
+            DisclosureGroup("Wi-Fi로 수동 전송하기") {
+              VStack(alignment: .leading, spacing: 10) {
                 Text("무선 연결")
                     .font(.system(size: 13, weight: .black, design: .rounded))
                     .foregroundStyle(AppTheme.ink)
@@ -317,6 +319,7 @@ private struct ConnectionPanel: View {
             }
             .padding(12)
             .background(AppTheme.panelStrong, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }
 
             HStack(spacing: 10) {
                 Button("USB 연결") {
@@ -328,6 +331,7 @@ private struct ConnectionPanel: View {
                     model.startPairing()
                 }
                 .buttonStyle(SecondaryActionButtonStyle())
+                .disabled(model.sessionClient.state != .connected || model.enteredPairingCode.count != 4)
 
                 Button("연결 해제") {
                     model.sessionClient.disconnect()
@@ -346,7 +350,7 @@ private struct ClipboardPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                SectionTitle("클립보드", subtitle: "버튼으로 직접 동기화", systemImage: "clipboard")
+                SectionTitle("사진·파일 공유", subtitle: "Mac ↔ Galaxy · 최대 24MB / 항목", systemImage: "clipboard")
                 Spacer()
                 Button(model.isClipboardHistoryVisible ? "히스토리 숨기기" : "히스토리 보기") {
                     model.toggleClipboardHistory()
@@ -359,16 +363,15 @@ private struct ClipboardPanel: View {
                 .foregroundStyle(AppTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(model.automaticClipboardStatus)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(AppTheme.warning)
-                .fixedSize(horizontal: false, vertical: true)
-
             HStack(spacing: 10) {
                 Button("Mac 클립보드 보내기") {
                     model.pushCurrentClipboardToAndroid()
                 }
                 .buttonStyle(PrimaryActionButtonStyle(tint: AppTheme.accent))
+
+                Button("사진·파일 선택") { model.chooseFileToShare() }
+                    .buttonStyle(SecondaryActionButtonStyle())
+                    .disabled(!model.canUseUSBFeatures)
 
                 Button("갤럭시 클립보드 가져오기") {
                     model.requestAndroidClipboardPull()
@@ -407,8 +410,6 @@ private struct DetailsPanel: View {
                 InfoRow("갤럭시", value: model.targetName)
                 InfoRow("연결 방식", value: model.sessionClient.activeTransportDescription)
                 InfoRow("상태 확인", value: model.sessionClient.healthText)
-                InfoRow("조작", value: model.controlStatusText)
-                InfoRow("전환 위치", value: model.edgeInstructionText)
                 if let last = model.sessionClient.lastReceivedMessage {
                     InfoRow("최근 수신", value: "\(last.type.rawValue) · \(last.deviceName)")
                 }

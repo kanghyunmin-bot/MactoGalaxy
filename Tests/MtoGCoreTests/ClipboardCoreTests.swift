@@ -144,3 +144,24 @@ private extension ClipboardReceiveResult {
         return false
     }
 }
+
+@MainActor
+struct ClipboardResumeRegressionTests {
+    @Test func resumingSameSessionPreservesSequence() throws {
+        let transport = InMemoryClipboardTransport(status: .available)
+        let receiver = InMemoryClipboardTransport(status: .available)
+        transport.peer = receiver
+        var events: [ClipboardEvent] = []
+        receiver.receiveHandler = { events.append($0) }
+        let store = InMemoryClipboardStore()
+        let coordinator = AutomaticClipboardCoordinator(store: store, transport: transport, sourceID: "mac", sessionID: "initial")
+        coordinator.start(sessionID: "session")
+        store.simulateLocalCopy(kind: .text, content: "before")
+        transport.status = .permissionRequired("locked")
+        coordinator.start(sessionID: "session")
+        transport.status = .available
+        coordinator.start(sessionID: "session")
+        store.simulateLocalCopy(kind: .text, content: "after")
+        #expect(events.map(\.sequence) == [1, 2])
+    }
+}

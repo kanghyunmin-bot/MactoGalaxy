@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import Combine
 import Foundation
 import MtoGCore
@@ -6,7 +7,7 @@ import MtoGCore
 @MainActor
 final class AppModel: ObservableObject {
     @Published var deviceName = Host.current().localizedName ?? "Mac"
-    @Published var targetName = "Galaxy Tab S11"
+    @Published var targetName = "Galaxy Tab"
     @Published var connectionStatus: ConnectionStatus = .disconnected
     @Published var transportStatus: TransportStatus = .usbWaiting
     @Published var wirelessHost: String = UserDefaults.standard.string(forKey: "com.mtog.wireless-host") ?? "" {
@@ -16,47 +17,10 @@ final class AppModel: ObservableObject {
     }
     @Published private(set) var wirelessDiscoveryStatus = "Wi-Fi 검색 대기 중"
     @Published private(set) var discoveredWirelessPeers: [WirelessDiscoveredPeer] = []
-    @Published var preferredExitHotkey = "Esc or Command + Q"
-    @Published var useSystemInputSettings = true {
-        didSet { persistAndApplyInputRoutingPreferences() }
-    }
-    @Published var manualPointerGain = 2.2 {
-        didSet { persistAndApplyInputRoutingPreferences() }
-    }
-    @Published var manualScrollGain = 1.0 {
-        didSet { persistAndApplyInputRoutingPreferences() }
-    }
-    @Published var manualPinchGain = 1.0 {
-        didSet { persistAndApplyInputRoutingPreferences() }
-    }
-    @Published var manualSwipeEnabled = true {
-        didSet { persistAndApplyInputRoutingPreferences() }
-    }
-    @Published var manualPinchEnabled = true {
-        didSet { persistAndApplyInputRoutingPreferences() }
-    }
-    @Published var manualHapticsEnabled = true {
-        didSet { persistAndApplyInputRoutingPreferences() }
-    }
-    @Published var allowExperimentalExternalDisplay = UserDefaults.standard.bool(forKey: "com.mtog.experimental-external-display-enabled") {
-        didSet {
-            UserDefaults.standard.set(
-                allowExperimentalExternalDisplay,
-                forKey: "com.mtog.experimental-external-display-enabled"
-            )
-            if !allowExperimentalExternalDisplay {
-                stopExternalDisplayMode()
-            }
-        }
-    }
-    @Published private(set) var cornerSelection: ControlCorner = .topRight
-    @Published var edgeThreshold: Double = 12 {
-        didSet {
-            edgeMonitor.threshold = edgeThreshold
-            refreshEdgeInstruction()
-        }
-    }
-    @Published var usbCableLabel = "USB-C / Thunderbolt 4 케이블 연결됨"
+    @Published private(set) var screenRecordingAllowed = false
+    @Published private(set) var touchInputAllowed = false
+    @Published var highQualityDisplay = true
+    @Published var usbCableLabel = "케이블 규격·연결 속도 미확인"
     @Published var trustState = TrustState(
         isTrusted: false,
         lastPairedDescription: "아직 저장된 기기가 없습니다",
@@ -65,124 +29,43 @@ final class AppModel: ObservableObject {
     @Published var pairingCode = ["", "", "", ""]
     @Published var clipboardHistory: [ClipboardHistoryItem]
     @Published var isClipboardHistoryVisible = false
-    @Published private(set) var edgeInstructionText = ""
-    @Published private(set) var lastEdgeEventDescription = "포인터 전환 대기 중"
     @Published private(set) var clipboardSyncStatus = "클립보드 동기화 대기 중"
-    @Published private(set) var automaticClipboardStatus = "자동 클립보드 확인 중"
+    @Published private(set) var automaticClipboardStatus = "자동 텍스트 클립보드 중지됨"
+    @Published private(set) var automaticClipboardEnabled = false
+    @Published private(set) var clipboardAuthority: ClipboardAuthorityStatus = .stopped
     @Published private(set) var pairingStatusText = "갤럭시 앱에 표시된 4자리 코드를 이 Mac에 입력하세요"
     @Published private(set) var trustedPeerCount = 0
     @Published private(set) var controlStatusText = "원격 조작 대기 중"
-    @Published private(set) var macInputProfile = MacInputSystemProfile()
-    @Published private(set) var controlTuningProfile = ControlInputTuningProfile.standard
-    @Published private(set) var aoaHidStatusText = "USB HID 브리지 대기 중"
-    @Published private(set) var isAoaHidRunning = false
-    @Published private(set) var mirrorStatusText = "미러링 대기 중"
-    @Published private(set) var isMirrorRunning = false
     @Published private(set) var externalDisplayStatusText = "외장 디스플레이 대기 중"
     @Published private(set) var isExternalDisplayRunning = false
 
     let transportCoordinator = TransportCoordinator()
     let sessionClient: SessionClient
-    let aoaHidBridge: AoaHidBridge
-    let scrcpyMirrorBridge: ScrcpyMirrorBridge
     let virtualDisplayBridge: VirtualDisplayBridge
     let externalDisplayInputSynthesizer: ExternalDisplayInputSynthesizer
     let wirelessDiscoveryBrowser: WirelessDiscoveryBrowser
     let localIdentity: SessionIdentitySnapshot
 
-    private let deviceIdentityStore: DeviceIdentityStore
     private let adbBridge: ADBBridge
-    private let inputProfileReader: MacInputSystemProfileReader
-    private let inputPreferencesStore: InputRoutingPreferencesStore
     private let trustedPeerStore: TrustedPeerStore
-    private let edgeMonitor: PointerEdgeMonitor
     private let clipboardSyncController: ClipboardSyncController
     private let clipboardCoordinator: ClipboardCoordinator
+    private var validatedPeerSession: UUID?
     private let clipboardHistoryPersistence: ClipboardHistoryPersistence
-    private let controlInputController: ControlModeInputController
     private var cancellables: Set<AnyCancellable> = []
 
-    init() {
-        self.deviceIdentityStore = DeviceIdentityStore()
+    init(identity: SessionIdentitySnapshot) {
         self.adbBridge = ADBBridge()
-        self.inputProfileReader = MacInputSystemProfileReader()
-        self.inputPreferencesStore = InputRoutingPreferencesStore()
         self.trustedPeerStore = TrustedPeerStore()
-        self.localIdentity = (try? deviceIdentityStore.snapshot(deviceName: Host.current().localizedName ?? "Mac"))
-            ?? SessionIdentitySnapshot(
-                deviceId: UUID().uuidString,
-                deviceName: Host.current().localizedName ?? "Mac",
-                publicKeyBase64: ""
-            )
-        self.sessionClient = SessionClient(identity: localIdentity)
-        self.edgeMonitor = PointerEdgeMonitor()
+        self.localIdentity = identity
+        self.sessionClient = SessionClient(bridge: adbBridge, identity: localIdentity)
         self.clipboardSyncController = ClipboardSyncController()
         self.clipboardCoordinator = ClipboardCoordinator(sourceID: ClipboardSyncPayload.localSourceId)
         self.clipboardHistoryPersistence = ClipboardHistoryPersistence()
-        self.aoaHidBridge = AoaHidBridge()
-        self.scrcpyMirrorBridge = ScrcpyMirrorBridge()
-        self.virtualDisplayBridge = VirtualDisplayBridge()
+        self.virtualDisplayBridge = VirtualDisplayBridge(adbBridge: adbBridge)
         self.externalDisplayInputSynthesizer = ExternalDisplayInputSynthesizer()
         self.wirelessDiscoveryBrowser = WirelessDiscoveryBrowser()
-        self.controlInputController = ControlModeInputController(
-            sessionClient: sessionClient,
-            hidBridge: aoaHidBridge
-        )
         self.clipboardHistory = clipboardHistoryPersistence.load() ?? []
-        let storedInputPreferences = inputPreferencesStore.load()
-        self.useSystemInputSettings = storedInputPreferences.followSystemSettings
-        self.manualPointerGain = storedInputPreferences.manualPointerGain
-        self.manualScrollGain = storedInputPreferences.manualScrollGain
-        self.manualPinchGain = storedInputPreferences.manualPinchGain
-        self.manualSwipeEnabled = storedInputPreferences.manualSwipeEnabled
-        self.manualPinchEnabled = storedInputPreferences.manualPinchEnabled
-        self.manualHapticsEnabled = storedInputPreferences.manualHapticsEnabled
-        let systemProfile = inputProfileReader.read()
-        self.macInputProfile = systemProfile
-        self.controlTuningProfile = MacInputSettingsResolver.resolve(
-            systemProfile: systemProfile,
-            preferences: storedInputPreferences
-        )
-
-        edgeMonitor.configuredCorner = cornerSelection
-        edgeMonitor.threshold = edgeThreshold
-        edgeMonitor.activationHandler = { [weak self] corner, location in
-            self?.handleCornerActivation(corner: corner, location: location)
-        }
-        controlInputController.statusHandler = { [weak self] status in
-            Task { @MainActor in
-                self?.controlStatusText = status
-            }
-        }
-        controlInputController.exitHandler = { [weak self] in
-            self?.exitAndroidControlMode()
-        }
-        aoaHidBridge.statusHandler = { [weak self] status in
-            Task { @MainActor in
-                self?.aoaHidStatusText = status
-            }
-        }
-        aoaHidBridge.stateHandler = { [weak self] running in
-            Task { @MainActor in
-                self?.isAoaHidRunning = running
-                if running {
-                    self?.transportStatus = .aoaCandidate
-                }
-            }
-        }
-        scrcpyMirrorBridge.statusHandler = { [weak self] status in
-            Task { @MainActor in
-                self?.mirrorStatusText = status
-            }
-        }
-        scrcpyMirrorBridge.stateHandler = { [weak self] running in
-            Task { @MainActor in
-                self?.isMirrorRunning = running
-                if running {
-                    self?.transportStatus = .adbMvp
-                }
-            }
-        }
         virtualDisplayBridge.statusHandler = { [weak self] status in
             Task { @MainActor in
                 self?.externalDisplayStatusText = status
@@ -191,14 +74,21 @@ final class AppModel: ObservableObject {
         virtualDisplayBridge.stateHandler = { [weak self] running in
             Task { @MainActor in
                 self?.isExternalDisplayRunning = running
+                if !running { self?.externalDisplayInputSynthesizer.releaseAll() }
                 if running {
                     self?.transportStatus = .adbMvp
                 }
             }
         }
-        virtualDisplayBridge.inputHandler = { [weak self] payload in
+        virtualDisplayBridge.inputHandler = { [weak self] payload, sessionID, request in
             Task { @MainActor in
-                self?.externalDisplayInputSynthesizer.handleInputPayload(payload)
+                guard let self,
+                      self.trustState.isTrusted,
+                      self.sessionClient.hasActiveADBSession,
+                      self.sessionClient.activeProtocolSessionID == sessionID,
+                      self.virtualDisplayBridge.isRequestActive(request),
+                      self.isExternalDisplayRunning else { return }
+                self.externalDisplayInputSynthesizer.handleInputPayload(payload)
             }
         }
         externalDisplayInputSynthesizer.permissionFailureHandler = { [weak self] in
@@ -206,14 +96,18 @@ final class AppModel: ObservableObject {
                 self?.externalDisplayStatusText = "갤럭시 터치 클릭을 쓰려면 macOS 손쉬운 사용에서 MtoG를 허용하세요"
             }
         }
-        controlInputController.updateTuningProfile(controlTuningProfile)
-        edgeMonitor.start()
-        refreshEdgeInstruction()
         refreshTrustSummary()
         bindSessionState()
         bindClipboardSync()
         clipboardCoordinator.statusHandler = { [weak self] status in
+            self?.clipboardAuthority = status
             switch status {
+            case .negotiating:
+                self?.automaticClipboardStatus = "클립보드 협상 중 · 읽기 권한 확인 대기"
+            case .permissionRequired(let reason):
+                self?.automaticClipboardStatus = "확인 필요: \(reason)"
+            case .unsupported(let reason):
+                self?.automaticClipboardStatus = "기능 미지원: \(reason)"
             case .available:
                 self?.automaticClipboardStatus = "자동 텍스트 클립보드 사용 가능"
             case .blocked(let reason):
@@ -224,7 +118,7 @@ final class AppModel: ObservableObject {
                 self?.automaticClipboardStatus = "자동 클립보드 오류: \(reason)"
             }
         }
-        clipboardCoordinator.start(sessionID: "authority-unavailable")
+
         bindWirelessDiscovery()
     }
 
@@ -241,56 +135,95 @@ final class AppModel: ObservableObject {
             : "갤럭시 앱에 표시된 4자리 코드를 입력하세요"
     }
 
-    func refreshMacInputProfile() {
-        let refreshedProfile = inputProfileReader.read()
-        macInputProfile = refreshedProfile
-        applyResolvedInputRoutingPreferences(
-            preferences: currentInputRoutingPreferences(),
-            persist: false
-        )
+    var canUseUSBFeatures: Bool {
+        trustState.isTrusted && sessionClient.hasActiveADBSession &&
+            validatedPeerSession == sessionClient.activeProtocolSessionID
     }
 
-    func startAoaHidBridge() {
-        aoaHidStatusText = "USB HID 브리지를 시작하는 중"
-        aoaHidBridge.start()
+    var canRetryClipboard: Bool {
+        guard automaticClipboardEnabled else { return false }
+        switch clipboardAuthority {
+        case .failed, .unsupported, .blocked: return true
+        default: return false
+        }
     }
 
-    func stopAoaHidBridge() {
-        aoaHidStatusText = "USB HID 브리지를 종료하는 중"
-        aoaHidBridge.stop()
+    func retryAutomaticClipboard() {
+        guard automaticClipboardEnabled else { return }
+        clipboardCoordinator.stop()
+        refreshAutomaticClipboard()
     }
 
-    func startMirrorMode() {
-        mirrorStatusText = "USB 미러링을 시작하는 중"
-        scrcpyMirrorBridge.start()
+    func toggleAutomaticClipboard() {
+        automaticClipboardEnabled.toggle()
+        if automaticClipboardEnabled { refreshAutomaticClipboard() }
+        else { clipboardCoordinator.stop() }
     }
 
-    func stopMirrorMode() {
-        mirrorStatusText = "미러링을 종료하는 중"
-        scrcpyMirrorBridge.stop()
+    private func refreshAutomaticClipboard() {
+        guard automaticClipboardEnabled else { return }
+        guard trustState.isTrusted, sessionClient.hasActiveADBSession,
+              let serial = sessionClient.selectedDeviceSerial,
+              let session = sessionClient.activeProtocolSessionID,
+              validatedPeerSession == session,
+              let adb = try? adbBridge.resolvedADBPath() else {
+            automaticClipboardStatus = "신뢰된 USB 연결 대기 중"
+            return
+        }
+        clipboardCoordinator.start(sessionID: session.uuidString, serial: serial, adbPath: adb)
+    }
+
+    func refreshDisplayPermissions() {
+        screenRecordingAllowed = CGPreflightScreenCaptureAccess()
+        touchInputAllowed = AXIsProcessTrusted()
+    }
+
+    func openScreenRecordingSettings() {
+        _ = CGRequestScreenCaptureAccess()
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    func openTouchPermissionSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     func startExternalDisplayMode() {
-        guard allowExperimentalExternalDisplay else {
-            externalDisplayStatusText = "외장 디스플레이가 꺼져 있습니다. 먼저 실험 기능 허용을 켜세요."
+        refreshDisplayPermissions()
+        guard screenRecordingAllowed else {
+            externalDisplayStatusText = "화면 기록 권한이 필요합니다. 아래 ‘화면 기록 설정’에서 MtoG를 허용하고 앱을 다시 여세요."
             return
         }
-        if isMirrorRunning {
-            stopMirrorMode()
+        guard trustState.isTrusted,
+              sessionClient.hasActiveADBSession,
+              let sessionID = sessionClient.activeProtocolSessionID else {
+            externalDisplayStatusText = "신뢰된 USB 연결 후 외장 디스플레이를 시작하세요"
+            return
         }
-        externalDisplayStatusText = "갤럭시 외장 디스플레이를 시작하는 중"
-        virtualDisplayBridge.start()
+        do {
+            let serial = try adbBridge.selectAuthorizedDevice(
+                preferredSerial: sessionClient.selectedDeviceSerial
+            )
+            externalDisplayStatusText = "갤럭시 외장 디스플레이를 시작하는 중"
+            virtualDisplayBridge.start(serial: serial, sessionID: sessionID, highQuality: highQualityDisplay)
+        } catch {
+            externalDisplayStatusText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
     }
 
     func stopExternalDisplayMode() {
+        externalDisplayInputSynthesizer.releaseAll()
         externalDisplayStatusText = "갤럭시 외장 디스플레이를 종료하는 중"
         virtualDisplayBridge.stop()
     }
 
     func shutdownForTermination() {
+        externalDisplayInputSynthesizer.releaseAll()
         clipboardCoordinator.stop()
         clipboardSyncController.stop()
-        scrcpyMirrorBridge.stop()
         virtualDisplayBridge.stopImmediately()
     }
 
@@ -353,13 +286,6 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func exitAndroidControlMode() {
-        controlInputController.deactivate()
-        connectionStatus = sessionClient.state == .connected || isAoaHidRunning ? .trusted : .disconnected
-        lastEdgeEventDescription = "Mac 조작으로 돌아왔습니다"
-        controlStatusText = "Mac 조작으로 돌아왔습니다"
-    }
-
     func startPairing() {
         let code = enteredPairingCode
         guard code.count == 4 else {
@@ -392,6 +318,24 @@ final class AppModel: ObservableObject {
             return
         }
 
+        sendSharedPayload(payload)
+    }
+
+    func chooseFileToShare() {
+        guard canUseUSBFeatures else { return }
+        let panel = NSOpenPanel()
+        panel.title = "Galaxy로 공유할 사진 또는 파일"
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard let payload = clipboardSyncController.filePayload(for: url) else {
+            clipboardSyncStatus = "읽을 수 있는 24MB 이하 파일을 선택하세요"
+            return
+        }
+        sendSharedPayload(payload)
+    }
+
+    private func sendSharedPayload(_ payload: ClipboardSyncPayload) {
         clipboardSyncStatus = "현재 Mac 클립보드를 갤럭시에 보내는 중"
         let generation = sessionClient.activeSessionGeneration
         Task {
@@ -472,6 +416,9 @@ final class AppModel: ObservableObject {
         sessionClient.$state
             .sink { [weak self] state in
                 self?.handleSessionState(state)
+                if state == .connected {
+                    Task { @MainActor [weak self] in self?.refreshAutomaticClipboard() }
+                }
             }
             .store(in: &cancellables)
     }
@@ -509,8 +456,8 @@ final class AppModel: ObservableObject {
     private func handleSessionState(_ state: SessionClient.State) {
         switch state {
         case .idle:
+            stopSessionOwnedProcesses()
             if connectionStatus == .active {
-                controlInputController.deactivate()
                 connectionStatus = .disconnected
             }
             if connectionStatus != .active {
@@ -521,6 +468,7 @@ final class AppModel: ObservableObject {
                 ? "저장된 기기가 있습니다. 갤럭시 앱을 열고 USB 또는 Wi-Fi로 연결하세요."
                 : "갤럭시 앱에 표시된 4자리 코드를 이 Mac에 입력하세요"
         case .preparingBridge, .connecting:
+            stopSessionOwnedProcesses()
             connectionStatus = .pairing
             trustState.lastSeenDescription = "연결 중"
         case .connected:
@@ -538,8 +486,8 @@ final class AppModel: ObservableObject {
                 ? "저장된 기기로 다시 연결할 수 있습니다"
                 : "연결됨. 갤럭시에 표시된 4자리 코드를 입력하고 페어링을 저장하세요."
         case .failed:
+            stopSessionOwnedProcesses()
             if connectionStatus == .active {
-                controlInputController.deactivate()
                 connectionStatus = .disconnected
             }
             if connectionStatus != .active {
@@ -551,42 +499,22 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func refreshEdgeInstruction() {
-        edgeInstructionText = "포인터를 Mac 화면 오른쪽 위 모서리 \(Int(edgeThreshold))pt 안으로 이동하면 갤럭시 조작 모드로 들어갑니다. 갤럭시 커서를 왼쪽 아래로 보내면 Mac으로 돌아옵니다."
-    }
-
-    private func handleCornerActivation(corner: ControlCorner, location: CGPoint) {
-        guard connectionStatus != .active else { return }
-        lastEdgeEventDescription = "\(corner.displayName)에서 전환 감지 · x:\(Int(location.x)) y:\(Int(location.y))"
-        guard isAoaHidRunning else {
-            lastEdgeEventDescription += " · USB HID 입력 시작 중"
-            controlStatusText = "갤럭시가 외부 키보드/마우스로 인식하도록 USB HID를 시작하는 중입니다."
-            startAoaHidBridge()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
-                guard let self, self.isAoaHidRunning, self.connectionStatus != .active else { return }
-                self.enterAndroidControlMode(trigger: corner, pointerLocation: location)
-            }
-            return
-        }
-
-        enterAndroidControlMode(trigger: corner, pointerLocation: location)
-    }
-
-    private func enterAndroidControlMode(trigger: ControlCorner, pointerLocation: CGPoint) {
-        refreshMacInputProfile()
-        connectionStatus = .active
-        lastEdgeEventDescription = "\(trigger.displayName)에서 갤럭시 조작 모드로 들어갔습니다"
-        controlStatusText = "갤럭시 입력 캡처 준비 중"
-        controlInputController.activate(trigger: trigger, initialPointerLocation: pointerLocation)
+    private func stopSessionOwnedProcesses() {
+        validatedPeerSession = nil
+        clipboardCoordinator.stop()
+        externalDisplayInputSynthesizer.releaseAll()
+        virtualDisplayBridge.stop()
     }
 
     private func handleLocalClipboard(_ payload: ClipboardSyncPayload) {
+        guard !automaticClipboardEnabled || (payload.kind != .text && payload.kind != .url) else { return }
         appendClipboardHistory(
             payload: payload,
             detail: clipboardDetail(for: payload, source: "Mac 클립보드"),
             sizeLabel: humanSize(payload.sizeInBytes)
         )
 
+        guard !automaticClipboardEnabled || (payload.kind != .text && payload.kind != .url) else { return }
         guard sessionClient.state == .connected else {
             clipboardSyncStatus = "연결 후 Mac 클립보드를 보낼 수 있습니다"
             return
@@ -638,6 +566,7 @@ final class AppModel: ObservableObject {
             return
         }
 
+        guard !automaticClipboardEnabled || (payload.kind != .text && payload.kind != .url) else { return }
         clipboardSyncController.applyRemotePayload(payload)
         appendClipboardHistory(
             payload: payload,
@@ -694,16 +623,11 @@ final class AppModel: ObservableObject {
     }
 
     private func handleHelloAck(_ message: SessionEnvelope) {
-        if let width = Double(message.payload["displayWidth"] ?? ""),
-           let height = Double(message.payload["displayHeight"] ?? ""),
-           width > 0,
-           height > 0 {
-            controlInputController.updateRemoteDisplaySize(
-                CGSize(width: width, height: height)
-            )
-        }
+
 
         guard let publicKeyBase64 = message.payload["publicKey"], !publicKeyBase64.isEmpty else {
+            trustState.isTrusted = false
+            stopSessionOwnedProcesses()
             pairingStatusText = "연결됐지만 상대 기기 정보를 아직 받지 못했습니다."
             return
         }
@@ -719,12 +643,15 @@ final class AppModel: ObservableObject {
                 lastPairedDescription: "신뢰된 기기 · 자동 재연결 가능",
                 lastSeenDescription: "방금 연결됨"
             )
+            validatedPeerSession = UUID(uuidString: message.sessionId)
             connectionStatus = .trusted
             pairingStatusText = "\(message.deviceName)와 신뢰 연결이 활성화됐습니다"
             refreshTrustSummary()
+            refreshAutomaticClipboard()
             clipboardSyncStatus = "신뢰된 기기와 연결됨. Mac에서 보내거나 갤럭시 알림에서 클립보드 동기화를 누르세요."
         } else {
             trustState.isTrusted = false
+            stopSessionOwnedProcesses()
             trustState.lastPairedDescription = "연결된 기기가 아직 저장되지 않았습니다"
             pairingStatusText = "갤럭시에 표시된 4자리 코드로 페어링을 저장하세요"
             refreshTrustSummary()
@@ -738,6 +665,7 @@ final class AppModel: ObservableObject {
         guard status == "accepted", !publicKeyBase64.isEmpty else {
             pairingStatusText = message.payload["reason"] ?? "갤럭시에서 페어링을 거절했습니다"
             trustState.isTrusted = false
+            stopSessionOwnedProcesses()
             return
         }
 
@@ -751,48 +679,17 @@ final class AppModel: ObservableObject {
             lastPairedDescription: "신뢰된 기기를 이 Mac에 저장했습니다",
             lastSeenDescription: "방금 연결됨"
         )
+        validatedPeerSession = UUID(uuidString: message.sessionId)
         connectionStatus = .trusted
         pairingStatusText = "페어링 완료. \(message.deviceName)을 신뢰된 기기로 저장했습니다."
         refreshTrustSummary()
+        refreshAutomaticClipboard()
     }
 
     private func refreshTrustSummary() {
         trustedPeerCount = trustedPeerStore.allPeers().count
     }
 
-    private func persistAndApplyInputRoutingPreferences() {
-        applyResolvedInputRoutingPreferences(
-            preferences: currentInputRoutingPreferences(),
-            persist: true
-        )
-    }
-
-    private func currentInputRoutingPreferences() -> InputRoutingPreferences {
-        InputRoutingPreferences(
-            followSystemSettings: useSystemInputSettings,
-            manualPointerGain: manualPointerGain,
-            manualScrollGain: manualScrollGain,
-            manualPinchGain: manualPinchGain,
-            manualSwipeEnabled: manualSwipeEnabled,
-            manualPinchEnabled: manualPinchEnabled,
-            manualHapticsEnabled: manualHapticsEnabled
-        )
-    }
-
-    private func applyResolvedInputRoutingPreferences(
-        preferences: InputRoutingPreferences,
-        persist: Bool
-    ) {
-        if persist {
-            inputPreferencesStore.save(preferences)
-        }
-
-        controlTuningProfile = MacInputSettingsResolver.resolve(
-            systemProfile: macInputProfile,
-            preferences: preferences
-        )
-        controlInputController.updateTuningProfile(controlTuningProfile)
-    }
 }
 
 enum ConnectionStatus: String {

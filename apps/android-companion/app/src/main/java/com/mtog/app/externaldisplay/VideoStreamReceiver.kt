@@ -17,7 +17,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.UUID
 
-class VideoStreamReceiver(private val port: Int) {
+class VideoStreamReceiver(private val port: Int, private val controlSessionID: UUID) {
     @Volatile private var serverSocket: ServerSocket? = null
     @Volatile private var clientSocket: Socket? = null
     private val writerLock = Any()
@@ -91,7 +91,7 @@ class VideoStreamReceiver(private val port: Int) {
                 kind = VideoPacketKind.Control,
                 codec = codec,
                 flags = 0,
-                sessionID = UUID.randomUUID(),
+                sessionID = controlSessionID,
                 sequence = nextControlSequence(),
                 presentationTimeUs = 0,
                 width = capabilities.maxWidth,
@@ -108,7 +108,7 @@ class VideoStreamReceiver(private val port: Int) {
                 kind = VideoPacketKind.Control,
                 codec = packet.codec,
                 flags = 0,
-                sessionID = packet.sessionID,
+                sessionID = controlSessionID,
                 sequence = nextControlSequence(),
                 presentationTimeUs = packet.presentationTimeUs,
                 width = packet.width,
